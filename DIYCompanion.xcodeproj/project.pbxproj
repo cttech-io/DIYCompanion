@@ -13,6 +13,8 @@
 		A10001000000000000000017 /* SpiritLevelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000016 /* SpiritLevelView.swift */; };
 		A10001000000000000000019 /* StudFinderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000018 /* StudFinderView.swift */; };
 		A1000100000000000000001B /* InspectionLightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000001A /* InspectionLightView.swift */; };
+		A10001000000000000000026 /* NoiseMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000025 /* NoiseMeterView.swift */; };
+		A10001000000000000000028 /* RulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000027 /* RulerView.swift */; };
 		A1000100000000000000001D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +25,8 @@
 		A10001000000000000000016 /* SpiritLevelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiritLevelView.swift; sourceTree = "<group>"; };
 		A10001000000000000000018 /* StudFinderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudFinderView.swift; sourceTree = "<group>"; };
 		A1000100000000000000001A /* InspectionLightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionLightView.swift; sourceTree = "<group>"; };
+		A10001000000000000000025 /* NoiseMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoiseMeterView.swift; sourceTree = "<group>"; };
+		A10001000000000000000027 /* RulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulerView.swift; sourceTree = "<group>"; };
 		A1000100000000000000001C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000100000000000000001E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A10001000000000000000020 /* DIYCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DIYCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -64,6 +68,8 @@
 				A10001000000000000000016 /* SpiritLevelView.swift */,
 				A10001000000000000000018 /* StudFinderView.swift */,
 				A1000100000000000000001A /* InspectionLightView.swift */,
+				A10001000000000000000025 /* NoiseMeterView.swift */,
+				A10001000000000000000027 /* RulerView.swift */,
 				A1000100000000000000001C /* Assets.xcassets */,
 				A10001000000000000000006 /* Preview Content */,
 			);
@@ -153,6 +159,8 @@
 				A10001000000000000000017 /* SpiritLevelView.swift in Sources */,
 				A10001000000000000000019 /* StudFinderView.swift in Sources */,
 				A1000100000000000000001B /* InspectionLightView.swift in Sources */,
+				A10001000000000000000026 /* NoiseMeterView.swift in Sources */,
+				A10001000000000000000028 /* RulerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,6 +292,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "DIY Companion";
 				INFOPLIST_KEY_NSCameraUsageDescription = "DIY Companion uses the camera flash for the torch/flashlight tool.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "DIY Companion uses the microphone to measure ambient noise levels.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -316,6 +325,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "DIY Companion";
 				INFOPLIST_KEY_NSCameraUsageDescription = "DIY Companion uses the camera flash for the torch/flashlight tool.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "DIY Companion uses the microphone to measure ambient noise levels.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -34,6 +34,16 @@ struct ContentView: View {
                 .tabItem {
                     Label(flashlightName, systemImage: "flashlight.on.fill")
                 }
+
+            NoiseMeterView()
+                .tabItem {
+                    Label("Noise Meter", systemImage: "waveform")
+                }
+
+            RulerView()
+                .tabItem {
+                    Label("Ruler", systemImage: "ruler")
+                }
         }
     }
 }

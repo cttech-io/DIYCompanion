@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Deep, electric metallic blue background gradient -->
+    <linearGradient id="electricBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A122C" />
+      <stop offset="50%" stop-color="#0F1E46" />
+      <stop offset="100%" stop-color="#050A1A" />
+    </linearGradient>
+
+    <!-- Glowing Amber/Gold Wave Sensor Pulses -->
+    <linearGradient id="amberWave" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D97706" stop-opacity="0.1" />
+      <stop offset="50%" stop-color="#F59E0B" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FDE047" stop-opacity="0.1" />
+    </linearGradient>
+
+    <!-- Core Scanner Lens Radial Glow -->
+    <radialGradient id="scannerCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FDE047" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#F59E0B" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#101B3B" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Inspection Flashlight Beam Cone -->
+    <linearGradient id="flashlightBeam" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Premium Depth Shadows -->
+    <filter id="waveGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="elementShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#020617" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <!-- iOS App Icon Squircle Background Canvas -->
+  <rect width="512" height="512" rx="112" fill="url(#electricBg)" />
+
+  <!-- Background Utility Crosshair Lines -->
+  <g opacity="0.15" stroke="#38BDF8" stroke-width="1.5">
+    <line x1="256" y1="40" x2="256" y2="472" stroke-dasharray="4 4" />
+    <line x1="40" y1="256" x2="472" y2="256" stroke-dasharray="4 4" />
+    <circle cx="256" cy="256" r="216" fill="none" stroke-width="1" />
+  </g>
+
+  <!-- WAVE CONE 1: Inspection Beam Flashlight Flare (Lower Left Accent) -->
+  <path d="M 40 472 L 220 220 L 40 120 Z" fill="url(#flashlightBeam)" />
+
+  <!-- RADIAL MAGNETOMETER ENERGY SCANNER CORE -->
+  <circle cx="256" cy="256" r="180" fill="url(#scannerCore)" />
+
+  <!-- DYNAMIC MAGNETIC FIELD LINES (Warping EMF Waves) -->
+  <!-- Modulating geometric waves layered to form an abstract 'DIY Companion' energy shield -->
+  <g filter="url(#waveGlow)" fill="none" stroke="url(#amberWave)" stroke-linecap="round">
+    <!-- Outer Field Line -->
+    <path d="M 90 256 C 90 140, 422 140, 422 256 C 422 372, 90 372, 90 256 Z" stroke-width="3" opacity="0.3" />
+    
+    <!-- Mid-Field Distorted Wave Layer -->
+    <path d="M 130 256 C 130 170, 382 150, 382 256 C 382 362, 130 342, 130 256 Z" stroke-width="4.5" opacity="0.6" />
+    
+    <!-- High Intensity Proximity Ring (Stud / Wire Proximity Indication) -->
+    <path d="M 170 256 C 170 210, 342 190, 342 256 C 342 322, 170 302, 170 256 Z" stroke-width="7" />
+  </g>
+
+  <!-- HARDWARE ANCHORS: The Real-World Companion Tools Layer -->
+  <g filter="url(#elementShadow)">
+    <!-- Abstract Stylized Carpenter's Pencil / Probe Rod (Intersecting Axis) -->
+    <path d="M 370 110 
+             L 390 130 
+             L 172 348 
+             C 164 356, 144 364, 134 366 
+             C 136 356, 144 336, 152 328 Z" 
+          fill="#F59E0B" />
+    <!-- Dark graphite tip point detail -->
+    <path d="M 144 336 C 144 336, 138 352, 134 366 C 148 362, 154 356, 154 356 Z" fill="#1E293B" />
+
+    <!-- Sleek Tactile Aluminum Flashlight Body Vector (Lower Left Anchor) -->
+    <rect x="54" y="400" width="28" height="74" rx="6" transform="rotate(-45 54 400)" fill="#64748B" />
+    <rect x="52" y="394" width="32" height="14" rx="3" transform="rotate(-45 52 394)" fill="#94A3B8" />
+    <!-- Glowing LED Emitted Light Node -->
+    <circle cx="82" cy="382" r="8" fill="#38BDF8" filter="url(#waveGlow)" />
+  </g>
+
+  <!-- LIVE METRIC LEVEL SYSTEM OVERLAY (The Precision Center Target) -->
+  <g filter="url(#elementShadow)">
+    <!-- Circular Level Housing Box sitting on top of the EMF fields -->
+    <circle cx="256" cy="256" r="32" fill="#1E293B" stroke="#475569" stroke-width="3" />
+    
+    <!-- Target Level Crosshair Box Lines -->
+    <line x1="256" y1="230" x2="256" y2="282" stroke="#EF4444" stroke-width="1.5" opacity="0.7" />
+    <line x1="230" y1="256" x2="282" y2="256" stroke="#EF4444" stroke-width="1.5" opacity="0.7" />
+    
+    <!-- Precision Core Center Bubble Indicator -->
+    <circle cx="256" cy="256" r="10" fill="#4ADE80" stroke="#22C55E" stroke-width="1" />
+    <circle cx="253" cy="253" r="4" fill="#FFFFFF" opacity="0.6" />
+  </g>
+</svg>
