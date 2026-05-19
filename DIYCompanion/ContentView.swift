@@ -1,11 +1,18 @@
 import SwiftUI
 
+// Resolves once at launch. British English variants use "Torch"; US English uses "Flashlight".
+let flashlightName: String = {
+    let lang = Locale.preferredLanguages.first ?? ""
+    let britishEnglish = ["en-GB", "en-AU", "en-NZ", "en-IE", "en-IN", "en-ZA"]
+    return britishEnglish.contains(where: { lang.hasPrefix($0) }) ? "Torch" : "Flashlight"
+}()
+
 struct ContentView: View {
     var body: some View {
         TabView {
-            PictureHangerView()
+            SpiritLevelView()
                 .tabItem {
-                    Label("Level", systemImage: "level")
+                    Label("Spirit Level", systemImage: "level")
                 }
 
             Group {
@@ -25,7 +32,7 @@ struct ContentView: View {
 
             InspectionLightView()
                 .tabItem {
-                    Label("Torch", systemImage: "flashlight.on.fill")
+                    Label(flashlightName, systemImage: "flashlight.on.fill")
                 }
         }
     }

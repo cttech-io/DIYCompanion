@@ -3,14 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		A10001000000000000000011 /* DIYCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000010 /* DIYCompanionApp.swift */; };
 		A10001000000000000000013 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000012 /* ContentView.swift */; };
 		A10001000000000000000015 /* HardwareManagers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000014 /* HardwareManagers.swift */; };
-		A10001000000000000000017 /* PictureHangerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000016 /* PictureHangerView.swift */; };
+		A10001000000000000000017 /* SpiritLevelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000016 /* SpiritLevelView.swift */; };
 		A10001000000000000000019 /* StudFinderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000018 /* StudFinderView.swift */; };
 		A1000100000000000000001B /* InspectionLightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000001A /* InspectionLightView.swift */; };
 		A1000100000000000000001D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000001C /* Assets.xcassets */; };
@@ -20,7 +20,7 @@
 		A10001000000000000000010 /* DIYCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DIYCompanionApp.swift; sourceTree = "<group>"; };
 		A10001000000000000000012 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A10001000000000000000014 /* HardwareManagers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareManagers.swift; sourceTree = "<group>"; };
-		A10001000000000000000016 /* PictureHangerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureHangerView.swift; sourceTree = "<group>"; };
+		A10001000000000000000016 /* SpiritLevelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiritLevelView.swift; sourceTree = "<group>"; };
 		A10001000000000000000018 /* StudFinderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudFinderView.swift; sourceTree = "<group>"; };
 		A1000100000000000000001A /* InspectionLightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionLightView.swift; sourceTree = "<group>"; };
 		A1000100000000000000001C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -61,7 +61,7 @@
 				A10001000000000000000010 /* DIYCompanionApp.swift */,
 				A10001000000000000000012 /* ContentView.swift */,
 				A10001000000000000000014 /* HardwareManagers.swift */,
-				A10001000000000000000016 /* PictureHangerView.swift */,
+				A10001000000000000000016 /* SpiritLevelView.swift */,
 				A10001000000000000000018 /* StudFinderView.swift */,
 				A1000100000000000000001A /* InspectionLightView.swift */,
 				A1000100000000000000001C /* Assets.xcassets */,
@@ -150,7 +150,7 @@
 				A10001000000000000000011 /* DIYCompanionApp.swift in Sources */,
 				A10001000000000000000013 /* ContentView.swift in Sources */,
 				A10001000000000000000015 /* HardwareManagers.swift in Sources */,
-				A10001000000000000000017 /* PictureHangerView.swift in Sources */,
+				A10001000000000000000017 /* SpiritLevelView.swift in Sources */,
 				A10001000000000000000019 /* StudFinderView.swift in Sources */,
 				A1000100000000000000001B /* InspectionLightView.swift in Sources */,
 			);
@@ -279,10 +279,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"DIYCompanion/Preview Content\"";
+				DEVELOPMENT_TEAM = 5RXS6MDFW8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "DIY Companion";
-				INFOPLIST_KEY_NSCameraUsageDescription = "DIY Companion uses the camera flash for the Inspection Light tool.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "DIY Companion uses the camera flash for the torch/flashlight tool.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -310,10 +311,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"DIYCompanion/Preview Content\"";
+				DEVELOPMENT_TEAM = 5RXS6MDFW8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "DIY Companion";
-				INFOPLIST_KEY_NSCameraUsageDescription = "DIY Companion uses the camera flash for the Inspection Light tool.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "DIY Companion uses the camera flash for the torch/flashlight tool.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -355,7 +357,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A10001000000000000000002 /* Project object */;
 }
