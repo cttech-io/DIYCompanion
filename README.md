@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/iOS-17%2B-blue?logo=apple" alt="iOS 17+">
   <img src="https://img.shields.io/badge/Swift-5.9-orange?logo=swift" alt="Swift">
   <img src="https://img.shields.io/badge/SwiftUI-lightgrey?logo=swift" alt="SwiftUI">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
+  <img src="https://img.shields.io/badge/license-cttech.io%20Open%20License-green" alt="cttech.io Open License">
 </p>
 
 ---
@@ -60,4 +60,4 @@ Open `DIYCompanion.xcodeproj` in Xcode 15 or later and run on a connected device
 
 ## License
 
-MIT
+[cttech.io Open License](LICENSE) — source available for personal and educational use; commercial distribution (including App Store submission) requires written permission from cttech.io.

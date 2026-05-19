@@ -1,0 +1,66 @@
+cttech.io Open License
+Version 1.0
+
+Copyright (c) 2024 cttech.io. All rights reserved.
+
+TERMS AND CONDITIONS
+
+1. Definitions
+
+   "Software" means the source code, assets, and documentation in this
+   repository.
+
+   "Personal Use" means use by an individual for private, non-commercial
+   purposes, including learning, experimentation, and contributing back to
+   this repository.
+
+   "Commercial Use" means any use intended for or resulting in commercial
+   advantage or monetary compensation, including but not limited to
+   distributing the Software (or any derivative work) through an app store,
+   charging for access, or incorporating the Software into a paid product
+   or service.
+
+2. Permitted Use
+
+   Permission is granted, free of charge, to any person obtaining a copy
+   of this Software to:
+
+   a) View, read, and study the source code;
+   b) Fork and modify the Software for Personal Use;
+   c) Submit contributions (pull requests, issues) back to the original
+      repository.
+
+3. Restrictions
+
+   The following are expressly prohibited without prior written permission
+   from cttech.io:
+
+   a) Distributing, publishing, or submitting the Software or any
+      derivative work to any app store, package registry, or distribution
+      platform (including but not limited to the Apple App Store and Google
+      Play Store);
+   b) Using the Software or any derivative work for Commercial Use;
+   c) Sublicensing, selling, or transferring rights to the Software or any
+      derivative work to a third party;
+   d) Removing or altering this licence notice or any copyright attribution
+      in the Software.
+
+4. Contributions
+
+   By submitting a contribution to this repository you agree that your
+   contribution is made under the same terms as this licence and that
+   cttech.io may use, modify, and distribute your contribution as part of
+   the Software without further obligation to you.
+
+5. No Warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+   IN NO EVENT SHALL CTTECH.IO BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+   LIABILITY ARISING FROM THE USE OF OR INABILITY TO USE THE SOFTWARE.
+
+6. Contact
+
+   To request a commercial licence or written permission for uses not
+   covered by this licence, contact: hello@cttech.io
