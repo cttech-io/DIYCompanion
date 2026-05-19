@@ -1,31 +1,58 @@
-# DIY Companion
+<p align="center">
+  <img src="DIYCompanion/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png" width="120" alt="DIY Companion">
+</p>
 
-A free, ad-free iOS utility app for everyday DIY tasks. Three precision tools in one lightweight app.
+<h1 align="center">DIY Companion</h1>
+
+<p align="center">
+  A free, ad-free iOS utility app for everyday DIY tasks.<br>
+  Five precision tools in one lightweight app.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/iOS-17%2B-blue?logo=apple" alt="iOS 17+">
+  <img src="https://img.shields.io/badge/Swift-5.9-orange?logo=swift" alt="Swift">
+  <img src="https://img.shields.io/badge/SwiftUI-lightgrey?logo=swift" alt="SwiftUI">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
+</p>
+
+---
 
 ## Tools
 
-### Spirit Level
+### 🔵 Spirit Level
 Uses the iPhone's accelerometer to display a real-time bubble level. Works flat on a surface or held vertically against a wall. Automatically adapts to portrait and landscape orientation. Haptic feedback fires the moment the device is perfectly level.
 
-### Wall Scanner
+### 📡 Wall Scanner
 Uses the iPhone's magnetometer to detect metal objects behind walls — studs, screws, pipes, and wiring. Automatically calibrates to the ambient magnetic field on launch so readings are relative to your environment, not Earth's field. Adjustable sensitivity slider for different wall materials and conditions.
 
 > **Note:** Remove MagSafe accessories before scanning. The ring magnets will interfere with readings. Run a fresh calibration before each scan.
 
-### Torch / Flashlight
+### 🔦 Torch / Flashlight
 Fine-grained brightness control over the rear camera flash — useful for inspecting dark spaces under stairs, behind panels, or in ceiling voids. The tool name adapts to your device language: *Torch* for British English, *Flashlight* for US English.
+
+### 🔊 Noise Meter
+Uses the iPhone's microphone to measure ambient sound levels in real time. Displays an approximate dB SPL reading, a colour-coded tier badge (Quiet / Moderate / Loud / Dangerous), and a resettable peak level marker. Useful for checking noise levels on a job site or inside a room before and after insulation work.
+
+### 📏 Ruler
+Turns the iPhone screen into a calibrated physical ruler. Uses a per-device PPI lookup table to ensure accurate tick marks in both centimetres and inches. Automatically switches the ruler from the left edge (portrait) to the top edge (landscape) so the longest side of the phone is always used.
+
+---
 
 ## Requirements
 
 - iOS 17+
 - Physical device required for Wall Scanner (magnetometer not available in Simulator)
+- Microphone permission required for Noise Meter
 
 ## Tech Stack
 
-- SwiftUI
-- CoreMotion — accelerometer, gyroscope, magnetometer via `CMDeviceMotion`
-- AVFoundation — torch control
-- UIKit — haptic feedback
+| Framework | Used for |
+|-----------|----------|
+| SwiftUI | All UI |
+| CoreMotion | Accelerometer (spirit level), magnetometer (wall scanner) |
+| AVFoundation | Torch control, microphone metering (noise meter) |
+| UIKit | Haptic feedback, screen PPI metrics |
 
 ## Building
 
