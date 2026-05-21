@@ -37,6 +37,8 @@ Uses the iPhone's microphone to measure ambient sound levels in real time. Displ
 ### 📏 Ruler
 Turns the iPhone screen into a calibrated physical ruler. Uses a per-device PPI lookup table to ensure accurate tick marks in both centimetres and inches. Automatically switches the ruler from the left edge (portrait) to the top edge (landscape) so the longest side of the phone is always used.
 
+Tap anywhere on the ruler to place a measurement marker. Tap again to place a second marker. Drag either marker to reposition. When both markers are set, the span between them is calculated automatically. Tap **Copy** to copy the measurement to the clipboard.
+
 ---
 
 ## Requirements
