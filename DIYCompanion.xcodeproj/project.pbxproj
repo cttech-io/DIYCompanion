@@ -17,6 +17,7 @@
 		A1000100000000000000002A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000029 /* SettingsView.swift */; };
 		A10001000000000000000028 /* RulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000027 /* RulerView.swift */; };
 		A1000100000000000000001D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000001C /* Assets.xcassets */; };
+		A1000100000000000000002C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000002B /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 		A1000100000000000000001A /* InspectionLightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionLightView.swift; sourceTree = "<group>"; };
 		A10001000000000000000025 /* NoiseMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoiseMeterView.swift; sourceTree = "<group>"; };
 		A10001000000000000000029 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1000100000000000000002B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A10001000000000000000027 /* RulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulerView.swift; sourceTree = "<group>"; };
 		A1000100000000000000001C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000100000000000000001E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 				A1000100000000000000001A /* InspectionLightView.swift */,
 				A10001000000000000000025 /* NoiseMeterView.swift */,
 				A10001000000000000000029 /* SettingsView.swift */,
+				A1000100000000000000002B /* PrivacyInfo.xcprivacy */,
 				A10001000000000000000027 /* RulerView.swift */,
 				A1000100000000000000001C /* Assets.xcassets */,
 				A10001000000000000000006 /* Preview Content */,
@@ -146,6 +149,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000100000000000000001D /* Assets.xcassets in Resources */,
+				A1000100000000000000002C /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

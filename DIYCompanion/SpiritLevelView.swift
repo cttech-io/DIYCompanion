@@ -125,6 +125,10 @@ private struct BubbleLevel: View {
                     .animation(.interactiveSpring(response: 0.38, dampingFraction: 0.68), value: dy)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Spirit level")
+        .accessibilityValue("Pitch \(String(format: "%.1f", pitch))°, roll \(String(format: "%.1f", roll))°. \(isLevel ? "Level" : "Not level").")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }
 

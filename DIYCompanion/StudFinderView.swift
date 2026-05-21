@@ -88,6 +88,12 @@ struct StudFinderView: View {
                 }
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Metal detection gauge")
+        .accessibilityValue(manager.isCalibrating
+            ? "Calibrating, hold phone away from walls"
+            : "\(Int(manager.deviation)) microteslas. \(statusLabel).")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var hintText: some View {
@@ -140,6 +146,7 @@ struct StudFinderView: View {
                 Text("Low").font(.caption2).foregroundStyle(.secondary)
                 Slider(value: $manager.sensitivity, in: 0.5...2.0)
                     .tint(.accentColor)
+                    .accessibilityLabel("Sensitivity")
                 Text("High").font(.caption2).foregroundStyle(.secondary)
             }
         }

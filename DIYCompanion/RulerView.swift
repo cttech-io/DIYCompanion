@@ -144,6 +144,10 @@ private struct RulerStrip: View {
             height: isHorizontal ? 68    : length
         )
         .background(Color(.tertiarySystemBackground))
+        .accessibilityLabel("Ruler")
+        .accessibilityHint(isHorizontal
+            ? "Place object flush against the top of the phone to measure"
+            : "Place object flush against the left side of the phone to measure")
     }
 
     private func drawMetric(ctx: GraphicsContext, size: CGSize) {

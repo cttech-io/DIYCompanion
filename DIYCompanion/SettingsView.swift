@@ -163,8 +163,11 @@ struct SettingsView: View {
                 Image(systemName: "arrow.up.right")
                     .font(.caption)
                     .foregroundStyle(Color.accentColor)
+                    .accessibilityHidden(true)
             }
         }
+        .accessibilityLabel("\(label): \(value)")
+        .accessibilityHint("Opens in browser")
     }
 }
 

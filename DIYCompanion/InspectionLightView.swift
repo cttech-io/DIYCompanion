@@ -58,6 +58,9 @@ struct InspectionLightView: View {
         }
         .buttonStyle(.plain)
         .animation(.snappy, value: manager.intensity > 0)
+        .accessibilityLabel("Torch")
+        .accessibilityValue(manager.intensity > 0 ? "On, \(Int(manager.intensity * 100)) percent" : "Off")
+        .accessibilityHint("Double tap to toggle")
     }
 
     private var intensityCard: some View {
@@ -71,6 +74,7 @@ struct InspectionLightView: View {
             }
             Slider(value: $manager.intensity, in: 0...1, step: 0.05)
                 .tint(.yellow)
+                .accessibilityLabel("Beam intensity")
         }
         .padding(20)
         .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 20))

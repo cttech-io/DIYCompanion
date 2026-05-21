@@ -81,6 +81,10 @@ struct NoiseMeterView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Noise level gauge")
+        .accessibilityValue("\(Int(manager.decibels)) decibels. \(tierLabel).")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var statusChip: some View {
