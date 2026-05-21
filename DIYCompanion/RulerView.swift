@@ -3,14 +3,21 @@ import UIKit
 
 struct RulerView: View {
     @AppStorage("useMetric") private var isMetric: Bool = true
-    @Environment(\.verticalSizeClass) private var vSize  // .compact = landscape
+    @Environment(\.verticalSizeClass) private var vSize
+    @State private var showSettings = false
+    @State private var markerA: CGFloat? = nil
+    @State private var markerB: CGFloat? = nil
+    @State private var activeMarker: MarkerID? = nil
+    @State private var didCopy = false
+
+    private enum MarkerID { case a, b }
 
     // Physical points per inch for the current device.
     // Uses the formula: physicalPPI × boundsLongSide / nativeLongSide,
     // which correctly accounts for downsampled displays (e.g. iPhone 6+/7+/8+)
     // and is orientation-independent (nativeBounds.height is always portrait-natural).
     private static let pointsPerInch: CGFloat = {
-        let native = UIScreen.main.nativeBounds.height  // always the long side
+        let native = UIScreen.main.nativeBounds.height
         let boundsLong = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
         let physPPI: CGFloat
         switch Int(native) {
@@ -32,53 +39,304 @@ struct RulerView: View {
         return physPPI * boundsLong / native
     }()
 
+    // MARK: - Measurement helpers
+
+    private func readout(_ pos: CGFloat) -> String {
+        let inches = pos / Self.pointsPerInch
+        return isMetric
+            ? String(format: "%.1f cm", inches * 2.54)
+            : String(format: "%.2f\"", inches)
+    }
+
+    private var spanText: String? {
+        guard let a = markerA, let b = markerB else { return nil }
+        return readout(abs(b - a))
+    }
+
+    private func resolveMarker(at pos: CGFloat) -> MarkerID {
+        guard let a = markerA else { return .a }
+        guard let b = markerB else { return .b }
+        return abs(a - pos) <= abs(b - pos) ? .a : .b
+    }
+
+    private func placeMarker(_ id: MarkerID, at pos: CGFloat, limit: CGFloat) {
+        let clamped = max(0, min(pos, limit))
+        switch id {
+        case .a: markerA = clamped
+        case .b: markerB = clamped
+        }
+    }
+
+    private func copyMeasurement() {
+        let text: String
+        if let s = spanText { text = s }
+        else if let a = markerA { text = readout(a) }
+        else { return }
+        UIPasteboard.general.string = text
+        withAnimation(.easeInOut) { didCopy = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.easeInOut) { didCopy = false }
+        }
+    }
+
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             GeometryReader { geo in
-                ZStack(alignment: .bottomTrailing) {
-                    Color(.secondarySystemBackground)
-
+                ZStack {
+                    Color(.secondarySystemBackground).ignoresSafeArea()
                     if vSize == .compact {
-                        // Landscape: ruler along the top edge (longest available side)
-                        VStack(alignment: .leading, spacing: 0) {
-                            RulerStrip(
-                                length: geo.size.width,
-                                pointsPerInch: Self.pointsPerInch,
-                                isMetric: isMetric,
-                                isHorizontal: true
-                            )
-                            Spacer()
-                        }
+                        landscapeLayout(geo: geo)
                     } else {
-                        // Portrait: ruler along the left edge (longest available side)
-                        HStack(spacing: 0) {
-                            RulerStrip(
-                                length: geo.size.height,
-                                pointsPerInch: Self.pointsPerInch,
-                                isMetric: isMetric,
-                                isHorizontal: false
-                            )
-                            VStack(alignment: .leading) {
-                                Spacer()
-                                instructionCard(horizontal: false)
-                                    .padding(.bottom, 80)
-                            }
-                            .padding(.leading, 20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
+                        portraitLayout(geo: geo)
                     }
-
-                    unitPicker
-                        .padding(.bottom, 20)
-                        .padding(.trailing, 20)
                 }
             }
-            .ignoresSafeArea(edges: .bottom)
-            .navigationTitle("Ruler")
+            .ignoresSafeArea(edges: vSize == .compact ? .top : [])
+            .navigationTitle(vSize == .compact ? "" : "Ruler")
             .navigationBarTitleDisplayMode(.automatic)
-            .withSettingsToolbar()
+            .toolbar(vSize == .compact ? .hidden : .visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showSettings) { SettingsView() }
+    }
+
+    // MARK: - Portrait layout
+
+    private func portraitLayout(geo: GeometryProxy) -> some View {
+        let rulerW: CGFloat = 68
+        return ZStack(alignment: .bottomTrailing) {
+            // Layer 1: ruler strip + gesture area
+            HStack(spacing: 0) {
+                RulerStrip(
+                    length: geo.size.height,
+                    pointsPerInch: Self.pointsPerInch,
+                    isMetric: isMetric,
+                    isHorizontal: false
+                )
+                Spacer()
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { v in
+                        if activeMarker == nil {
+                            activeMarker = resolveMarker(at: v.startLocation.y)
+                        }
+                        placeMarker(activeMarker!, at: v.location.y, limit: geo.size.height)
+                    }
+                    .onEnded { _ in activeMarker = nil }
+            )
+
+            // Layer 2: marker lines
+            if let a = markerA {
+                hLine(y: a, color: Color.accentColor, width: geo.size.width)
+                chip(readout(a),
+                     at: CGPoint(x: rulerW + 56, y: max(16, min(a, geo.size.height - 16))),
+                     color: Color.accentColor)
+            }
+            if let b = markerB {
+                hLine(y: b, color: .orange, width: geo.size.width)
+                chip(readout(b),
+                     at: CGPoint(x: rulerW + 56, y: max(16, min(b, geo.size.height - 16))),
+                     color: .orange)
+            }
+
+            // Layer 3: measurement card — rendered above lines so they don't overlap it
+            VStack {
+                Spacer()
+                Group {
+                    if markerA != nil || markerB != nil {
+                        measurementCard
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    } else {
+                        Text("Tap to place a marker")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .multilineTextAlignment(.center)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut, value: markerA == nil && markerB == nil)
+                .padding(.bottom, 90)
+            }
+            .padding(.leading, rulerW + 16)
+            .padding(.trailing, 16)
+
+            // Layer 4: unit picker
+            unitPicker
+                .padding(.bottom, 20)
+                .padding(.trailing, 20)
         }
     }
+
+    // MARK: - Landscape layout
+
+    private func landscapeLayout(geo: GeometryProxy) -> some View {
+        let rulerH: CGFloat = 68
+        return ZStack {
+            // Layer 1: ruler strip + gesture area
+            VStack(alignment: .leading, spacing: 0) {
+                RulerStrip(
+                    length: geo.size.width,
+                    pointsPerInch: Self.pointsPerInch,
+                    isMetric: isMetric,
+                    isHorizontal: true
+                )
+                Spacer()
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { v in
+                        if activeMarker == nil {
+                            activeMarker = resolveMarker(at: v.startLocation.x)
+                        }
+                        placeMarker(activeMarker!, at: v.location.x, limit: geo.size.width)
+                    }
+                    .onEnded { _ in activeMarker = nil }
+            )
+
+            let lineHeight = geo.size.height - geo.safeAreaInsets.bottom
+            if let a = markerA {
+                vLine(x: a, color: Color.accentColor, height: lineHeight)
+                chip(readout(a),
+                     at: CGPoint(x: max(32, min(a, geo.size.width - 32)), y: rulerH - 4),
+                     color: Color.accentColor)
+            }
+            if let b = markerB {
+                vLine(x: b, color: .orange, height: lineHeight)
+                chip(readout(b),
+                     at: CGPoint(x: max(32, min(b, geo.size.width - 32)), y: rulerH - 4),
+                     color: .orange)
+            }
+
+            // Layer 3: measurement card — rendered above lines
+            VStack(alignment: .leading) {
+                Group {
+                    if markerA != nil || markerB != nil {
+                        measurementCard
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    } else {
+                        Text("Tap to place a marker")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut, value: markerA == nil && markerB == nil)
+                .padding(.leading, 20)
+                .padding(.top, rulerH + 16)
+                Spacer()
+            }
+
+            // Layer 4: floating controls
+            VStack {
+                Spacer()
+                HStack(spacing: 12) {
+                    Spacer()
+                    unitPicker
+                    Button { showSettings = true } label: {
+                        Image(systemName: "gearshape")
+                            .padding(10)
+                            .background(Color(.tertiarySystemBackground), in: Circle())
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            }
+        }
+    }
+
+    // MARK: - Marker overlays
+
+    private func hLine(y: CGFloat, color: Color, width: CGFloat) -> some View {
+        color.opacity(0.75)
+            .frame(width: width, height: 2)
+            .position(x: width / 2, y: y)
+            .allowsHitTesting(false)
+    }
+
+    private func vLine(x: CGFloat, color: Color, height: CGFloat) -> some View {
+        color.opacity(0.75)
+            .frame(width: 2, height: height)
+            .position(x: x, y: height / 2)
+            .allowsHitTesting(false)
+    }
+
+    private func chip(_ text: String, at point: CGPoint, color: Color) -> some View {
+        Text(text)
+            .font(.caption2).bold().monospacedDigit()
+            .padding(.horizontal, 6).padding(.vertical, 3)
+            .background(color, in: Capsule())
+            .foregroundStyle(.white)
+            .position(point)
+            .allowsHitTesting(false)
+    }
+
+    // MARK: - Measurement card
+
+    private var measurementCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let a = markerA {
+                HStack(spacing: 6) {
+                    Circle().fill(Color.accentColor).frame(width: 8, height: 8)
+                    Text(readout(a))
+                        .font(.system(.callout, design: .rounded)).bold().monospacedDigit()
+                }
+            }
+            if let b = markerB {
+                HStack(spacing: 6) {
+                    Circle().fill(Color.orange).frame(width: 8, height: 8)
+                    Text(readout(b))
+                        .font(.system(.callout, design: .rounded)).bold().monospacedDigit()
+                }
+            }
+            if let span = spanText {
+                Divider()
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.up.and.down")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text(span)
+                        .font(.system(.callout, design: .rounded)).bold().monospacedDigit()
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            Divider()
+            HStack {
+                Button { copyMeasurement() } label: {
+                    Label(
+                        didCopy ? "Copied" : "Copy",
+                        systemImage: didCopy ? "checkmark" : "doc.on.doc"
+                    )
+                    .font(.caption).bold()
+                }
+                .tint(didCopy ? .green : .accentColor)
+                .animation(.easeInOut, value: didCopy)
+                Spacer()
+                Button {
+                    withAnimation(.easeInOut) {
+                        markerA = nil
+                        markerB = nil
+                    }
+                } label: {
+                    Text("Clear").font(.caption).bold()
+                }
+                .tint(.red)
+            }
+        }
+        .padding(14)
+        .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
+        .frame(maxWidth: 180)
+    }
+
+    // MARK: - Unit picker
 
     private var unitPicker: some View {
         Picker("Unit", selection: $isMetric) {
@@ -90,28 +348,6 @@ struct RulerView: View {
         .padding(8)
         .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
     }
-
-    private func instructionCard(horizontal: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: horizontal ? "arrow.up" : "arrow.left")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text(horizontal ? "Top edge is 0" : "Left edge is 0")
-                    .font(.caption).bold()
-                    .foregroundStyle(.secondary)
-            }
-            Text(horizontal
-                 ? "Place object flush against the top of the phone."
-                 : "Place object flush against the left side of the phone.")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
-        .frame(maxWidth: 200)
-    }
 }
 
 private struct RulerStrip: View {
@@ -122,7 +358,6 @@ private struct RulerStrip: View {
 
     var body: some View {
         Canvas { ctx, size in
-            // Measuring edge
             var edge = Path()
             if isHorizontal {
                 edge.move(to: .init(x: 0, y: 1))

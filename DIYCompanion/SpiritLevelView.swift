@@ -101,11 +101,11 @@ private struct BubbleLevel: View {
 
             ZStack {
                 Circle()
-                    .stroke(isLevel ? Color.green : Color.white.opacity(0.15), lineWidth: 3)
+                    .stroke(isLevel ? Color.green : Color.primary.opacity(0.15), lineWidth: 3)
                     .animation(.snappy, value: isLevel)
 
                 Circle()
-                    .stroke(isLevel ? Color.green : Color.white.opacity(0.30), lineWidth: 1.5)
+                    .stroke(isLevel ? Color.green : Color.primary.opacity(0.30), lineWidth: 1.5)
                     .frame(width: 52, height: 52)
 
                 Path { path in
@@ -114,7 +114,7 @@ private struct BubbleLevel: View {
                     path.move(to: CGPoint(x: 8, y: c.y))
                     path.addLine(to: CGPoint(x: geo.size.width - 8, y: c.y))
                 }
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
 
                 Circle()
                     .fill(isLevel ? Color.green : Color.accentColor)

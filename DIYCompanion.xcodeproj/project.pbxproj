@@ -13,10 +13,10 @@
 		A10001000000000000000017 /* SpiritLevelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000016 /* SpiritLevelView.swift */; };
 		A10001000000000000000019 /* StudFinderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000018 /* StudFinderView.swift */; };
 		A1000100000000000000001B /* InspectionLightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000001A /* InspectionLightView.swift */; };
-		A10001000000000000000026 /* NoiseMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000025 /* NoiseMeterView.swift */; };
-		A1000100000000000000002A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000029 /* SettingsView.swift */; };
-		A10001000000000000000028 /* RulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000027 /* RulerView.swift */; };
 		A1000100000000000000001D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000001C /* Assets.xcassets */; };
+		A10001000000000000000026 /* NoiseMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000025 /* NoiseMeterView.swift */; };
+		A10001000000000000000028 /* RulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000027 /* RulerView.swift */; };
+		A1000100000000000000002A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000029 /* SettingsView.swift */; };
 		A1000100000000000000002C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000002B /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -27,13 +27,13 @@
 		A10001000000000000000016 /* SpiritLevelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiritLevelView.swift; sourceTree = "<group>"; };
 		A10001000000000000000018 /* StudFinderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudFinderView.swift; sourceTree = "<group>"; };
 		A1000100000000000000001A /* InspectionLightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionLightView.swift; sourceTree = "<group>"; };
-		A10001000000000000000025 /* NoiseMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoiseMeterView.swift; sourceTree = "<group>"; };
-		A10001000000000000000029 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		A1000100000000000000002B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		A10001000000000000000027 /* RulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulerView.swift; sourceTree = "<group>"; };
 		A1000100000000000000001C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000100000000000000001E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A10001000000000000000020 /* DIYCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DIYCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10001000000000000000025 /* NoiseMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoiseMeterView.swift; sourceTree = "<group>"; };
+		A10001000000000000000027 /* RulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulerView.swift; sourceTree = "<group>"; };
+		A10001000000000000000029 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1000100000000000000002B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,7 +118,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					A10001000000000000000021 = {
 						CreatedOnToolsVersion = 16.0;
@@ -195,11 +195,13 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_LOOPS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -208,6 +210,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 5RXS6MDFW8;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -230,6 +233,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -255,11 +259,13 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_LOOPS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -268,6 +274,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5RXS6MDFW8;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -282,6 +289,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -295,7 +303,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"DIYCompanion/Preview Content\"";
-				DEVELOPMENT_TEAM = 5RXS6MDFW8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "DIY Companion";
@@ -311,7 +318,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.diycompanion.app;
+				PRODUCT_BUNDLE_IDENTIFIER = io.cttech.diycompanion;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -328,7 +335,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"DIYCompanion/Preview Content\"";
-				DEVELOPMENT_TEAM = 5RXS6MDFW8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "DIY Companion";
@@ -344,7 +350,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.diycompanion.app;
+				PRODUCT_BUNDLE_IDENTIFIER = io.cttech.diycompanion;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
