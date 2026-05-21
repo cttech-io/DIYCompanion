@@ -37,6 +37,7 @@ struct InspectionLightView: View {
             .background(Color(.secondarySystemBackground))
             .navigationTitle(flashlightName)
             .navigationBarTitleDisplayMode(.automatic)
+            .withSettingsToolbar()
         }
         .onDisappear { manager.stop() }
     }

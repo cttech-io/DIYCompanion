@@ -37,6 +37,7 @@ struct StudFinderView: View {
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Wall Scanner")
             .navigationBarTitleDisplayMode(.automatic)
+            .withSettingsToolbar()
         }
         .onAppear { manager.start() }
         .onDisappear { manager.stop() }

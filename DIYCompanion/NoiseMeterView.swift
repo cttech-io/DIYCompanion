@@ -44,6 +44,7 @@ struct NoiseMeterView: View {
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Noise Meter")
             .navigationBarTitleDisplayMode(.automatic)
+            .withSettingsToolbar()
         }
         .onAppear { manager.start() }
         .onDisappear { manager.stop() }

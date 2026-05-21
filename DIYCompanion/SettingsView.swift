@@ -1,0 +1,195 @@
+import SwiftUI
+
+enum AppAppearance: String, CaseIterable {
+    case system, light, dark
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light:  return .light
+        case .dark:   return .dark
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .system: return "System"
+        case .light:  return "Light"
+        case .dark:   return "Dark"
+        }
+    }
+}
+
+struct SettingsView: View {
+    @AppStorage("appearance")     private var appearance:     String = "dark"
+    @AppStorage("useMetric")      private var useMetric:      Bool   = true
+    @AppStorage("hapticsEnabled") private var hapticsEnabled: Bool   = true
+    @Environment(\.dismiss)       private var dismiss
+
+    private var version: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    appearanceCard
+                    measurementCard
+                    feedbackCard
+                    aboutCard
+                }
+                .padding()
+            }
+            .background(Color(.secondarySystemBackground))
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .fontWeight(.semibold)
+                }
+            }
+        }
+    }
+
+    // MARK: - Cards
+
+    private var appearanceCard: some View {
+        card("Appearance") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Theme")
+                    .font(.subheadline)
+                Picker("Theme", selection: $appearance) {
+                    ForEach(AppAppearance.allCases, id: \.rawValue) { option in
+                        Text(option.label).tag(option.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+    }
+
+    private var measurementCard: some View {
+        card("Measurement") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Default Units")
+                    .font(.subheadline)
+                Picker("Units", selection: $useMetric) {
+                    Text("Metric (cm)").tag(true)
+                    Text("Imperial (in)").tag(false)
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+    }
+
+    private var feedbackCard: some View {
+        card("Feedback") {
+            Toggle(isOn: $hapticsEnabled) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Haptic Feedback")
+                        .font(.subheadline)
+                    Text("Fires when the spirit level is perfectly level.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .tint(.accentColor)
+        }
+    }
+
+    private var aboutCard: some View {
+        card("About") {
+            VStack(spacing: 0) {
+                HStack {
+                    Text("DIY Companion")
+                        .font(.subheadline)
+                    Spacer()
+                    Text("v\(version)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+
+                Divider().padding(.vertical, 14)
+
+                linkRow(label: "Developer", value: "cttech.io",
+                        url: "https://cttech.io")
+
+                Divider().padding(.vertical, 14)
+
+                linkRow(label: "Source Code", value: "GitHub",
+                        url: "https://github.com/cttech-io/DIYCompanion")
+
+                Divider().padding(.vertical, 14)
+
+                HStack {
+                    Text("Licence")
+                        .font(.subheadline)
+                    Spacer()
+                    Text("cttech.io Open License")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func card<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.caption).bold()
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
+            content()
+                .padding(16)
+                .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 20))
+        }
+    }
+
+    private func linkRow(label: String, value: String, url: String) -> some View {
+        Link(destination: URL(string: url)!) {
+            HStack {
+                Text(label)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text(value)
+                    .font(.subheadline)
+                    .foregroundStyle(.accentColor)
+                Image(systemName: "arrow.up.right")
+                    .font(.caption)
+                    .foregroundStyle(.accentColor)
+            }
+        }
+    }
+}
+
+// MARK: - Settings toolbar
+
+private struct SettingsModifier: ViewModifier {
+    @State private var showSettings = false
+
+    func body(content: Content) -> some View {
+        content
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+            }
+    }
+}
+
+extension View {
+    func withSettingsToolbar() -> some View {
+        modifier(SettingsModifier())
+    }
+}

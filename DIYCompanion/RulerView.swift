@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct RulerView: View {
-    @State private var isMetric = true
+    @AppStorage("useMetric") private var isMetric: Bool = true
     @Environment(\.verticalSizeClass) private var vSize  // .compact = landscape
 
     // Physical points per inch for the current device.
@@ -76,6 +76,7 @@ struct RulerView: View {
             .ignoresSafeArea(edges: .bottom)
             .navigationTitle("Ruler")
             .navigationBarTitleDisplayMode(.automatic)
+            .withSettingsToolbar()
         }
     }
 

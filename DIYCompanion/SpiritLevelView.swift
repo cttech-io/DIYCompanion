@@ -60,6 +60,7 @@ struct SpiritLevelView: View {
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Spirit Level")
             .navigationBarTitleDisplayMode(.automatic)
+            .withSettingsToolbar()
         }
         .onAppear { manager.start() }
         .onDisappear { manager.stop() }

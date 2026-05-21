@@ -62,7 +62,8 @@ class LevelManager: ObservableObject {
 
             if level != self.isLevel {
                 self.isLevel = level
-                if level { self.haptic.impactOccurred() }
+                let hapticsOn = UserDefaults.standard.object(forKey: "hapticsEnabled") as? Bool ?? true
+                if level && hapticsOn { self.haptic.impactOccurred() }
             }
         }
     }
