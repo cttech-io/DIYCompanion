@@ -159,10 +159,10 @@ struct SettingsView: View {
                 Spacer()
                 Text(value)
                     .font(.subheadline)
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                 Image(systemName: "arrow.up.right")
                     .font(.caption)
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
             }
         }
     }
