@@ -53,7 +53,7 @@ DIY Companion does not knowingly collect data from anyone, including children.
 
 ## Changes to This Policy
 
-If this policy changes materially, the updated version will be posted at this URL with a revised date.
+If this policy changes materially, the updated version will be posted at https://cttech.io/diy-companion/privacy-policy/ with a revised date.
 
 ---
 

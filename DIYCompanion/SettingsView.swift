@@ -124,6 +124,11 @@ struct SettingsView: View {
 
                 Divider().padding(.vertical, 14)
 
+                linkRow(label: "Privacy Policy", value: "cttech.io",
+                        url: "https://cttech.io/diy-companion/privacy-policy/")
+
+                Divider().padding(.vertical, 14)
+
                 HStack {
                     Text("Licence")
                         .font(.subheadline)
