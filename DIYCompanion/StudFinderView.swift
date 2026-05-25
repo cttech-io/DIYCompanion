@@ -3,6 +3,8 @@ import SwiftUI
 struct StudFinderView: View {
     @StateObject private var manager = MagnetometerManager()
     @Environment(\.verticalSizeClass) private var vSize
+    @AppStorage("studFinderDisclaimerAccepted") private var disclaimerAccepted = false
+    @State private var showDisclaimer = false
 
     var body: some View {
         NavigationStack {
@@ -39,7 +41,17 @@ struct StudFinderView: View {
             .navigationBarTitleDisplayMode(.automatic)
             .withSettingsToolbar()
         }
-        .onAppear { manager.start() }
+        .sheet(isPresented: $showDisclaimer) {
+            DisclaimerSheet {
+                disclaimerAccepted = true
+                showDisclaimer = false
+            }
+            .interactiveDismissDisabled()
+        }
+        .onAppear {
+            manager.start()
+            if !disclaimerAccepted { showDisclaimer = true }
+        }
         .onDisappear { manager.stop() }
     }
 
@@ -204,5 +216,42 @@ struct StudFinderView: View {
         case .caution: return "Metal Nearby — Proceed Carefully"
         case .danger:  return "Object Detected — Do Not Drill"
         }
+    }
+}
+
+private struct DisclaimerSheet: View {
+    let onAccept: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "exclamationmark.shield.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.orange)
+
+            VStack(spacing: 10) {
+                Text("Important Disclaimer")
+                    .font(.title3).bold()
+
+                Text("This scanner is a general guide only and **cannot guarantee accuracy**. Always confirm stud, pipe, and wiring locations with a professional-grade detector before drilling. DIY Companion accepts no liability for any damage or injury resulting from use of this feature.")
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button(action: onAccept) {
+                Text("I Understand — Continue")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16))
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding(28)
+        .presentationDetents([.medium])
     }
 }
