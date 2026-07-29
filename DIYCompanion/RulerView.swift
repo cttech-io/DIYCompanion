@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct RulerView: View {
-    @AppStorage("useMetric") private var isMetric: Bool = true
+    @AppStorage(Prefs.useMetric) private var isMetric: Bool = true
     @Environment(\.verticalSizeClass) private var vSize
     @State private var showSettings = false
     @State private var markerA: CGFloat? = nil
@@ -19,33 +19,90 @@ struct RulerView: View {
     private static let pointsPerInch: CGFloat = {
         let native = UIScreen.main.nativeBounds.height
         let boundsLong = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        let physPPI: CGFloat
-        switch Int(native) {
-        case 1136: physPPI = 326  // iPhone SE 1st gen
-        case 1334: physPPI = 326  // iPhone 8, SE 2nd/3rd gen
-        case 1920: physPPI = 401  // iPhone 6+/7+/8+
-        case 2436: physPPI = 458  // iPhone X, XS, 11 Pro
-        case 2688: physPPI = 458  // iPhone XS Max, 11 Pro Max
-        case 1792: physPPI = 326  // iPhone XR, 11
-        case 2532: physPPI = 460  // iPhone 12, 13, 14, 15, 16
-        case 2340: physPPI = 476  // iPhone 12 mini, 13 mini
-        case 2778: physPPI = 458  // iPhone 12/13/14/15/16 Plus/Pro Max variants
-        case 2556: physPPI = 460  // iPhone 14 Pro, 15, 15 Pro, 16
-        case 2796: physPPI = 460  // iPhone 14/15 Pro Max, 15/16 Plus
-        case 2622: physPPI = 460  // iPhone 16 Pro
-        case 2868: physPPI = 460  // iPhone 16 Pro Max
-        default:   physPPI = UIScreen.main.scale >= 3 ? 460 : 326
-        }
+        let physPPI = physicalPPI(
+            model: currentModelIdentifier(),
+            nativeLongSide: native,
+            scale: UIScreen.main.scale
+        )
         return physPPI * boundsLong / native
     }()
 
+    /// Hardware model identifier (e.g. "iPhone14,5"). Unlike screen metrics,
+    /// this can't be changed by Display Zoom, so it's the only robust key: a
+    /// zoomed 6.1" phone and a real mini are indistinguishable by pixel counts.
+    static func currentModelIdentifier() -> String {
+        var sys = utsname()
+        uname(&sys)
+        return withUnsafeBytes(of: &sys.machine) { raw in
+            let ptr = raw.baseAddress!.assumingMemoryBound(to: CChar.self)
+            return String(cString: ptr)
+        }
+    }
+
+    /// Physical pixel density for a device. Keyed on the hardware model so
+    /// Display Zoom can't miscalibrate the ruler; falls back to native pixel
+    /// dimensions for unknown models (Simulator, future hardware).
+    static func physicalPPI(model: String, nativeLongSide: CGFloat, scale: CGFloat) -> CGFloat {
+        if let ppi = ppiByModel[model] { return ppi }
+        return fallbackPPI(nativeLongSide: nativeLongSide, scale: scale)
+    }
+
+    private static func fallbackPPI(nativeLongSide: CGFloat, scale: CGFloat) -> CGFloat {
+        switch Int(nativeLongSide) {
+        case 1136: return 326  // iPhone SE 1st gen
+        case 1334: return 326  // iPhone 8, SE 2nd/3rd gen
+        case 1920: return 401  // iPhone 6+/7+/8+
+        case 2436: return 458  // iPhone X, XS, 11 Pro
+        case 2688: return 458  // iPhone XS Max, 11 Pro Max
+        case 1792: return 326  // iPhone XR, 11
+        case 2532: return 460  // iPhone 12/13-class
+        case 2340: return 460  // ambiguous with a zoomed 6.1": assume full-size, not mini
+        case 2778: return 458  // Plus / Pro Max class
+        case 2556: return 460  // iPhone 14 Pro / 15-class
+        case 2796: return 460  // Pro Max / Plus class
+        case 2622: return 460  // iPhone 16 Pro
+        case 2868: return 460  // iPhone 16 Pro Max
+        default:   return scale >= 3 ? 460 : 326
+        }
+    }
+
+    /// Model → physical ppi. Only the mini models (476) truly differ from the
+    /// 460 default among recent devices, and they're exactly what Display Zoom
+    /// makes ambiguous — so getting these two right is the whole point.
+    static let ppiByModel: [String: CGFloat] = [
+        // 12/13 mini — the ones a zoomed 6.1" phone masquerades as
+        "iPhone13,1": 476,  // 12 mini
+        "iPhone14,4": 476,  // 13 mini
+        // 12/13/14/15/16 6.1" and Pro (460)
+        "iPhone13,2": 460, "iPhone13,3": 460,          // 12, 12 Pro
+        "iPhone14,5": 460, "iPhone14,2": 460,          // 13, 13 Pro
+        "iPhone14,7": 460, "iPhone15,2": 460,          // 14, 14 Pro
+        "iPhone15,4": 460, "iPhone16,1": 460,          // 15, 15 Pro
+        "iPhone17,3": 460, "iPhone17,1": 460,          // 16, 16 Pro
+        "iPhone17,5": 460,                              // 16e
+        // Plus / Max (458–460)
+        "iPhone13,4": 458,                              // 12 Pro Max
+        "iPhone14,3": 458, "iPhone14,8": 458,          // 13 Pro Max, 14 Plus
+        "iPhone15,3": 460, "iPhone15,5": 460,          // 14 Pro Max, 15 Plus
+        "iPhone16,2": 460, "iPhone17,4": 460, "iPhone17,2": 460,  // 15 Pro Max, 16 Plus, 16 Pro Max
+        // Older / SE
+        "iPhone8,4": 326, "iPhone12,8": 326,           // SE 1st, SE 2nd
+        "iPhone14,6": 326,                              // SE 3rd
+        "iPhone12,1": 326, "iPhone11,8": 326,          // 11, XR
+        "iPhone12,3": 458, "iPhone12,5": 458,          // 11 Pro, 11 Pro Max
+    ]
+
     // MARK: - Measurement helpers
 
-    private func readout(_ pos: CGFloat) -> String {
-        let inches = pos / Self.pointsPerInch
+    static func readout(points: CGFloat, pointsPerInch: CGFloat, isMetric: Bool) -> String {
+        let inches = points / pointsPerInch
         return isMetric
             ? String(format: "%.1f cm", inches * 2.54)
             : String(format: "%.2f\"", inches)
+    }
+
+    private func readout(_ pos: CGFloat) -> String {
+        Self.readout(points: pos, pointsPerInch: Self.pointsPerInch, isMetric: isMetric)
     }
 
     private var spanText: String? {
@@ -64,6 +121,47 @@ struct RulerView: View {
         switch id {
         case .a: markerA = clamped
         case .b: markerB = clamped
+        }
+    }
+
+    private func clearMarkers() {
+        withAnimation(.easeInOut) {
+            markerA = nil
+            markerB = nil
+        }
+        activeMarker = nil
+    }
+
+    // MARK: - Accessibility
+
+    private var mmInPoints: CGFloat { Self.pointsPerInch / 25.4 }
+
+    private var accessibilityValueText: String {
+        if let a = markerA, let b = markerB, let span = spanText {
+            return "Marker A at \(readout(a)), marker B at \(readout(b)), distance \(span)"
+        } else if let a = markerA {
+            return "Marker A at \(readout(a))"
+        } else {
+            return "No markers placed"
+        }
+    }
+
+    private func adjustActiveMarker(_ direction: AccessibilityAdjustmentDirection, limit: CGFloat) {
+        // Move the active marker (defaulting to whichever is placed) by 1 mm.
+        let id: MarkerID = activeMarker ?? (markerA != nil ? .a : .b)
+        let current: CGFloat = (id == .a ? markerA : markerB) ?? 0
+        let delta = direction == .increment ? mmInPoints : -mmInPoints
+        placeMarker(id, at: current + delta, limit: limit)
+        activeMarker = id
+    }
+
+    private func placeNextMarkerAccessibly(limit: CGFloat) {
+        if markerA == nil {
+            placeMarker(.a, at: limit / 2, limit: limit)
+            activeMarker = .a
+        } else if markerB == nil {
+            placeMarker(.b, at: limit / 2, limit: limit)
+            activeMarker = .b
         }
     }
 
@@ -96,6 +194,14 @@ struct RulerView: View {
             .ignoresSafeArea(edges: vSize == .compact ? .top : [])
             .navigationTitle(vSize == .compact ? "" : "Ruler")
             .navigationBarTitleDisplayMode(.automatic)
+            .onChange(of: vSize) { _, _ in
+                // Markers are raw offsets along the active axis; on a portrait⇄
+                // landscape flip that axis changes, so a stale offset would land
+                // on the wrong (possibly off-screen) spot. Clear them.
+                markerA = nil
+                markerB = nil
+                activeMarker = nil
+            }
             .toolbar(vSize == .compact ? .hidden : .visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -126,13 +232,19 @@ struct RulerView: View {
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .local)
                     .onChanged { v in
-                        if activeMarker == nil {
-                            activeMarker = resolveMarker(at: v.startLocation.y)
-                        }
-                        placeMarker(activeMarker!, at: v.location.y, limit: geo.size.height)
+                        let id = activeMarker ?? resolveMarker(at: v.startLocation.y)
+                        activeMarker = id
+                        placeMarker(id, at: v.location.y, limit: geo.size.height)
                     }
                     .onEnded { _ in activeMarker = nil }
             )
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Ruler measurement")
+            .accessibilityValue(accessibilityValueText)
+            .accessibilityHint("Swipe up or down to move the active marker by one millimetre. Use actions to place or clear markers.")
+            .accessibilityAdjustableAction { adjustActiveMarker($0, limit: geo.size.height) }
+            .accessibilityAction(named: "Place marker") { placeNextMarkerAccessibly(limit: geo.size.height) }
+            .accessibilityAction(named: "Clear markers") { clearMarkers() }
 
             // Layer 2: marker lines
             if let a = markerA {
@@ -194,13 +306,19 @@ struct RulerView: View {
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .local)
                     .onChanged { v in
-                        if activeMarker == nil {
-                            activeMarker = resolveMarker(at: v.startLocation.x)
-                        }
-                        placeMarker(activeMarker!, at: v.location.x, limit: geo.size.width)
+                        let id = activeMarker ?? resolveMarker(at: v.startLocation.x)
+                        activeMarker = id
+                        placeMarker(id, at: v.location.x, limit: geo.size.width)
                     }
                     .onEnded { _ in activeMarker = nil }
             )
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Ruler measurement")
+            .accessibilityValue(accessibilityValueText)
+            .accessibilityHint("Swipe up or down to move the active marker by one millimetre. Use actions to place or clear markers.")
+            .accessibilityAdjustableAction { adjustActiveMarker($0, limit: geo.size.width) }
+            .accessibilityAction(named: "Place marker") { placeNextMarkerAccessibly(limit: geo.size.width) }
+            .accessibilityAction(named: "Clear markers") { clearMarkers() }
 
             let lineHeight = geo.size.height - geo.safeAreaInsets.bottom
             if let a = markerA {
@@ -301,7 +419,7 @@ struct RulerView: View {
             if let span = spanText {
                 Divider()
                 HStack(spacing: 6) {
-                    Image(systemName: "arrow.up.and.down")
+                    Image(systemName: vSize == .compact ? "arrow.left.and.right" : "arrow.up.and.down")
                         .font(.caption).foregroundStyle(.secondary)
                     Text(span)
                         .font(.system(.callout, design: .rounded)).bold().monospacedDigit()
@@ -321,10 +439,7 @@ struct RulerView: View {
                 .animation(.easeInOut, value: didCopy)
                 Spacer()
                 Button {
-                    withAnimation(.easeInOut) {
-                        markerA = nil
-                        markerB = nil
-                    }
+                    clearMarkers()
                 } label: {
                     Text("Clear").font(.caption).bold()
                 }

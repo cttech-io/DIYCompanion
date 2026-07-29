@@ -12,8 +12,18 @@ class LevelManager: ObservableObject {
     @Published var isLevel: Bool = false
     @Published var deviceOrientation: UIDeviceOrientation = .portrait
 
+    // Plumb (against-a-wall) mode: engaged when the phone is held roughly
+    // vertical, where attitude-based pitch/roll hit gimbal lock. Driven by
+    // gravity instead, so the readout stays well-defined.
+    @Published var isPlumbMode: Bool = false
+    @Published var plumbAngle: Double = 0.0   // degrees from true vertical
+
     private let filter: Double = 0.15
     private var orientationToken: NSObjectProtocol?
+
+    // Cached so the 60 Hz motion callback never touches UserDefaults.
+    private var hapticsEnabled: Bool = UserDefaults.standard.object(forKey: Prefs.hapticsEnabled) as? Bool ?? true
+    private var defaultsToken: NSObjectProtocol?
 
     init() {
         haptic.prepare()
@@ -32,6 +42,15 @@ class LevelManager: ObservableObject {
             }
         }
 
+        // Keep the cached haptics flag in step with Settings changes.
+        defaultsToken = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.hapticsEnabled = UserDefaults.standard.object(forKey: Prefs.hapticsEnabled) as? Bool ?? true
+        }
+
         guard motionManager.isDeviceMotionAvailable else { return }
         motionManager.deviceMotionUpdateInterval = 1.0 / 60.0
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
@@ -48,10 +67,15 @@ class LevelManager: ObservableObject {
             let gy = data.gravity.y
             let gz = data.gravity.z
             let threshold = 0.0087  // sin(0.5°)
+            let plumb = abs(gz) <= 0.4
+            self.isPlumbMode = plumb
+
             let level: Bool
-            if abs(gz) > 0.4 {
+            if !plumb {
                 level = abs(gx) < threshold && abs(gy) < threshold
             } else {
+                let angle = Self.plumbAngleDegrees(gx: gx, gy: gy, orientation: self.deviceOrientation)
+                self.plumbAngle = angle * self.filter + self.plumbAngle * (1 - self.filter)
                 switch self.deviceOrientation {
                 case .landscapeLeft, .landscapeRight:
                     level = abs(gy) < threshold
@@ -62,9 +86,21 @@ class LevelManager: ObservableObject {
 
             if level != self.isLevel {
                 self.isLevel = level
-                let hapticsOn = UserDefaults.standard.object(forKey: "hapticsEnabled") as? Bool ?? true
-                if level && hapticsOn { self.haptic.impactOccurred() }
+                if level && self.hapticsEnabled { self.haptic.impactOccurred() }
             }
+        }
+    }
+
+    /// Angle of the phone's long axis from true vertical, in degrees, derived
+    /// from the gravity vector so it stays well-defined near the poles where
+    /// attitude pitch/roll are ambiguous. Zero = perfectly plumb.
+    static func plumbAngleDegrees(gx: Double, gy: Double, orientation: UIDeviceOrientation) -> Double {
+        let deg = 180.0 / Double.pi
+        switch orientation {
+        case .portraitUpsideDown: return atan2(-gx, gy)  * deg
+        case .landscapeLeft:      return atan2(-gy, gx)  * deg
+        case .landscapeRight:     return atan2(gy, -gx)  * deg
+        default:                  return atan2(gx, -gy)  * deg  // portrait
         }
     }
 
@@ -73,6 +109,10 @@ class LevelManager: ObservableObject {
         if let token = orientationToken {
             NotificationCenter.default.removeObserver(token)
             orientationToken = nil
+        }
+        if let token = defaultsToken {
+            NotificationCenter.default.removeObserver(token)
+            defaultsToken = nil
         }
         UIDevice.current.endGeneratingDeviceOrientationNotifications()
     }
@@ -121,13 +161,16 @@ class MagnetometerManager: ObservableObject {
 
             let dev = abs(mag - self.baselineMag)
             self.deviation = dev
-
-            // Thresholds are in deviation µT; sensitivity scales them down/up.
-            // Default (1.0×): caution at 25 µT, danger at 60 µT.
-            let caution = 25.0 / self.sensitivity
-            let danger  = 60.0 / self.sensitivity
-            self.threat = dev > danger ? .danger : dev > caution ? .caution : .safe
+            self.threat = Self.classify(deviation: dev, sensitivity: self.sensitivity)
         }
+    }
+
+    /// Thresholds are in deviation µT; sensitivity scales them down/up.
+    /// Default (1.0×): caution at 25 µT, danger at 60 µT.
+    static func classify(deviation dev: Double, sensitivity: Double) -> Threat {
+        let caution = 25.0 / sensitivity
+        let danger  = 60.0 / sensitivity
+        return dev > danger ? .danger : dev > caution ? .caution : .safe
     }
 
     func recalibrate() {
@@ -158,8 +201,10 @@ class NoiseManager: ObservableObject {
 
     private var recorder: AVAudioRecorder?
     private var timer: Timer?
+    private var interruptionObserver: NSObjectProtocol?
 
     func start() {
+        registerInterruptionObserver()
         switch AVAudioApplication.shared.recordPermission {
         case .granted:     beginRecording()
         case .denied:      permissionDenied = true
@@ -174,11 +219,59 @@ class NoiseManager: ObservableObject {
         }
     }
 
+    /// Re-check on foreground: recover a recorder that an interruption left
+    /// dead, and pick up a permission the user granted in Settings while away.
+    func restartIfNeeded() {
+        switch AVAudioApplication.shared.recordPermission {
+        case .granted:
+            if permissionDenied { permissionDenied = false }
+            if recorder == nil || recorder?.isRecording == false {
+                beginRecording()
+            }
+        case .denied:
+            permissionDenied = true
+        case .undetermined:
+            break
+        @unknown default:
+            break
+        }
+    }
+
+    private func registerInterruptionObserver() {
+        guard interruptionObserver == nil else { return }
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            guard let self,
+                  let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+            switch type {
+            case .began:
+                // Recorder is dead; stop the timer so the gauge doesn't freeze
+                // reading a stale value against it.
+                self.timer?.invalidate(); self.timer = nil
+            case .ended:
+                self.beginRecording()
+            @unknown default:
+                break
+            }
+        }
+    }
+
     private func beginRecording() {
+        // Tear down any prior recorder/timer so repeated calls (interruption
+        // end, foreground restart) don't stack.
+        timer?.invalidate(); timer = nil
+        recorder?.stop(); recorder = nil
+
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.record, mode: .measurement)
         try? session.setActive(true)
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("diynoise.caf")
+        // Metering works without persisting audio; write to /dev/null so nothing
+        // is ever stored (no unbounded temp file — and a cleaner privacy story).
+        let url = URL(fileURLWithPath: "/dev/null")
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatAppleLossless),
             AVSampleRateKey: 44100.0,
@@ -201,11 +294,16 @@ class NoiseManager: ObservableObject {
         let spl = max(30.0, min(120.0, Double(raw) + 120.0))
         decibels = Float(spl)
         peak = max(peak, decibels)
+        tier = Self.tier(forDBFS: raw)
+    }
+
+    /// Map raw dBFS average power to a coarse tier.
+    static func tier(forDBFS raw: Float) -> Tier {
         switch raw {
-        case ..<(-70): tier = .quiet       // < ~50 dB SPL
-        case ..<(-50): tier = .moderate    // ~50–70 dB SPL
-        case ..<(-30): tier = .loud        // ~70–90 dB SPL
-        default:       tier = .dangerous   // > ~90 dB SPL
+        case ..<(-70): return .quiet       // < ~50 dB SPL
+        case ..<(-50): return .moderate    // ~50–70 dB SPL
+        case ..<(-30): return .loud        // ~70–90 dB SPL
+        default:       return .dangerous   // > ~90 dB SPL
         }
     }
 
@@ -214,6 +312,10 @@ class NoiseManager: ObservableObject {
     func stop() {
         timer?.invalidate(); timer = nil
         recorder?.stop(); recorder = nil
+        if let token = interruptionObserver {
+            NotificationCenter.default.removeObserver(token)
+            interruptionObserver = nil
+        }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
@@ -225,10 +327,16 @@ class TorchManager: ObservableObject {
         didSet { apply(intensity) }
     }
 
+    // Cache the capture device once rather than looking it up on every tick.
+    private lazy var device: AVCaptureDevice? = {
+        let dev = AVCaptureDevice.default(for: .video)
+        return (dev?.hasTorch == true) ? dev : nil
+    }()
+
     func stop() { intensity = 0 }
 
     private func apply(_ level: Float) {
-        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
+        guard let device else { return }
         try? device.lockForConfiguration()
         if level > 0 {
             try? device.setTorchModeOn(level: max(0.001, min(level, 1.0)))

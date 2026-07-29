@@ -18,6 +18,9 @@
 		A10001000000000000000028 /* RulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000027 /* RulerView.swift */; };
 		A1000100000000000000002A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000029 /* SettingsView.swift */; };
 		A1000100000000000000002C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1000100000000000000002B /* PrivacyInfo.xcprivacy */; };
+		A10001000000000000000041 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000040 /* AppConstants.swift */; };
+		A10001000000000000000043 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000042 /* ViewModifiers.swift */; };
+		A10001000000000000000052 /* DIYCompanionLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000051 /* DIYCompanionLogicTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,10 +37,21 @@
 		A10001000000000000000027 /* RulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulerView.swift; sourceTree = "<group>"; };
 		A10001000000000000000029 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A1000100000000000000002B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A10001000000000000000040 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
+		A10001000000000000000042 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
+		A10001000000000000000051 /* DIYCompanionLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DIYCompanionLogicTests.swift; sourceTree = "<group>"; };
+		A10001000000000000000053 /* DIYCompanionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DIYCompanionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A10001000000000000000023 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10001000000000000000056 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -51,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				A10001000000000000000005 /* DIYCompanion */,
+				A10001000000000000000050 /* DIYCompanionTests */,
 				A10001000000000000000004 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				A10001000000000000000020 /* DIYCompanion.app */,
+				A10001000000000000000053 /* DIYCompanionTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,6 +83,8 @@
 			isa = PBXGroup;
 			children = (
 				A10001000000000000000010 /* DIYCompanionApp.swift */,
+				A10001000000000000000040 /* AppConstants.swift */,
+				A10001000000000000000042 /* ViewModifiers.swift */,
 				A10001000000000000000012 /* ContentView.swift */,
 				A10001000000000000000014 /* HardwareManagers.swift */,
 				A10001000000000000000016 /* SpiritLevelView.swift */,
@@ -90,6 +108,14 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
+		A10001000000000000000050 /* DIYCompanionTests */ = {
+			isa = PBXGroup;
+			children = (
+				A10001000000000000000051 /* DIYCompanionLogicTests.swift */,
+			);
+			path = DIYCompanionTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -110,7 +136,35 @@
 			productReference = A10001000000000000000020 /* DIYCompanion.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A10001000000000000000054 /* DIYCompanionTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1000100000000000000005C /* Build configuration list for PBXNativeTarget "DIYCompanionTests" */;
+			buildPhases = (
+				A10001000000000000000055 /* Sources */,
+				A10001000000000000000056 /* Frameworks */,
+				A10001000000000000000057 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10001000000000000000059 /* PBXTargetDependency */,
+			);
+			name = DIYCompanionTests;
+			productName = DIYCompanionTests;
+			productReference = A10001000000000000000053 /* DIYCompanionTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		A10001000000000000000058 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10001000000000000000002 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10001000000000000000021;
+			remoteInfo = DIYCompanion;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXProject section */
 		A10001000000000000000002 /* Project object */ = {
@@ -122,6 +176,10 @@
 				TargetAttributes = {
 					A10001000000000000000021 = {
 						CreatedOnToolsVersion = 16.0;
+					};
+					A10001000000000000000054 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = A10001000000000000000021;
 					};
 				};
 			};
@@ -139,6 +197,7 @@
 			projectRoot = "";
 			targets = (
 				A10001000000000000000021 /* DIYCompanion */,
+				A10001000000000000000054 /* DIYCompanionTests */,
 			);
 		};
 /* End PBXProject section */
@@ -153,7 +212,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10001000000000000000057 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10001000000000000000059 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10001000000000000000021 /* DIYCompanion */;
+			targetProxy = A10001000000000000000058 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A10001000000000000000022 /* Sources */ = {
@@ -161,6 +235,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10001000000000000000011 /* DIYCompanionApp.swift in Sources */,
+				A10001000000000000000041 /* AppConstants.swift in Sources */,
+				A10001000000000000000043 /* ViewModifiers.swift in Sources */,
 				A10001000000000000000013 /* ContentView.swift in Sources */,
 				A10001000000000000000015 /* HardwareManagers.swift in Sources */,
 				A10001000000000000000017 /* SpiritLevelView.swift in Sources */,
@@ -169,6 +245,14 @@
 				A10001000000000000000026 /* NoiseMeterView.swift in Sources */,
 				A1000100000000000000002A /* SettingsView.swift in Sources */,
 				A10001000000000000000028 /* RulerView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10001000000000000000055 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10001000000000000000052 /* DIYCompanionLogicTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,7 +385,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"DIYCompanion/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -333,7 +417,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"DIYCompanion/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -359,6 +443,48 @@
 			};
 			name = Release;
 		};
+		A1000100000000000000005A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = 5RXS6MDFW8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.cttech.diycompanion.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DIYCompanion.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DIYCompanion";
+			};
+			name = Debug;
+		};
+		A1000100000000000000005B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = 5RXS6MDFW8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.cttech.diycompanion.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DIYCompanion.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DIYCompanion";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -376,6 +502,15 @@
 			buildConfigurations = (
 				A10001000000000000000033 /* Debug */,
 				A10001000000000000000034 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1000100000000000000005C /* Build configuration list for PBXNativeTarget "DIYCompanionTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000100000000000000005A /* Debug */,
+				A1000100000000000000005B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

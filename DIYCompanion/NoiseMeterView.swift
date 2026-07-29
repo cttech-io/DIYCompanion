@@ -3,16 +3,24 @@ import SwiftUI
 struct NoiseMeterView: View {
     @StateObject private var manager = NoiseManager()
     @Environment(\.verticalSizeClass) private var vSize
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
             Group {
                 if manager.permissionDenied {
-                    ContentUnavailableView(
-                        "Microphone Access Required",
-                        systemImage: "mic.slash",
-                        description: Text("Enable microphone access in Settings → Privacy & Security → Microphone.")
-                    )
+                    ContentUnavailableView {
+                        Label("Microphone Access Required", systemImage: "mic.slash")
+                    } description: {
+                        Text("The Noise Meter needs the microphone to measure sound levels.")
+                    } actions: {
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                 } else if vSize == .compact {
                     HStack(spacing: 24) {
                         gaugeRing(size: 160)
@@ -46,8 +54,14 @@ struct NoiseMeterView: View {
             .navigationBarTitleDisplayMode(.automatic)
             .withSettingsToolbar()
         }
+        .keepsScreenAwake()
         .onAppear { manager.start() }
         .onDisappear { manager.stop() }
+        .onChange(of: scenePhase) { _, phase in
+            // On return to foreground: recover a recorder an interruption killed,
+            // and pick up a mic permission granted in Settings while we were away.
+            if phase == .active { manager.restartIfNeeded() }
+        }
     }
 
     private func gaugeRing(size: CGFloat) -> some View {
@@ -57,7 +71,7 @@ struct NoiseMeterView: View {
 
         return ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.10), lineWidth: strokeWidth)
+                .stroke(Color(.systemFill), lineWidth: strokeWidth)
                 .frame(width: size, height: size)
 
             Circle()

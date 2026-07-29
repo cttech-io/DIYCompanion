@@ -21,10 +21,10 @@ enum AppAppearance: String, CaseIterable {
 }
 
 struct SettingsView: View {
-    @AppStorage("appearance")     private var appearance:     String = "dark"
-    @AppStorage("useMetric")      private var useMetric:      Bool   = true
-    @AppStorage("hapticsEnabled") private var hapticsEnabled: Bool   = true
-    @Environment(\.dismiss)       private var dismiss
+    @AppStorage(Prefs.appearance)     private var appearance:     String = Prefs.defaultAppearance
+    @AppStorage(Prefs.useMetric)      private var useMetric:      Bool   = true
+    @AppStorage(Prefs.hapticsEnabled) private var hapticsEnabled: Bool   = true
+    @Environment(\.dismiss)           private var dismiss
 
     private var version: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -115,17 +115,17 @@ struct SettingsView: View {
                 Divider().padding(.vertical, 14)
 
                 linkRow(label: "Developer", value: "cttech.io",
-                        url: "https://cttech.io")
+                        url: URL(string: "https://cttech.io")!)
 
                 Divider().padding(.vertical, 14)
 
                 linkRow(label: "Source Code", value: "GitHub",
-                        url: "https://github.com/cttech-io/DIYCompanion")
+                        url: URL(string: "https://github.com/cttech-io/DIYCompanion")!)
 
                 Divider().padding(.vertical, 14)
 
                 linkRow(label: "Privacy Policy", value: "cttech.io",
-                        url: "https://cttech.io/diy-companion/privacy-policy/")
+                        url: URL(string: "https://cttech.io/diy-companion/privacy-policy/")!)
 
                 Divider().padding(.vertical, 14)
 
@@ -155,8 +155,8 @@ struct SettingsView: View {
         }
     }
 
-    private func linkRow(label: String, value: String, url: String) -> some View {
-        Link(destination: URL(string: url)!) {
+    private func linkRow(label: String, value: String, url: URL) -> some View {
+        Link(destination: url) {
             HStack {
                 Text(label)
                     .font(.subheadline)

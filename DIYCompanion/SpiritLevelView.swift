@@ -9,22 +9,10 @@ struct SpiritLevelView: View {
             Group {
                 if vSize == .compact {
                     HStack(spacing: 32) {
-                        BubbleLevel(
-                            pitch: manager.pitch,
-                            roll: manager.roll,
-                            isLevel: manager.isLevel,
-                            orientation: manager.deviceOrientation
-                        )
-                        .frame(width: 200, height: 200)
-
+                        levelDisplay(size: 200)
                         VStack(spacing: 0) {
                             Spacer()
-                            HStack(spacing: 40) {
-                                AngleReadout(label: "PITCH", degrees: manager.pitch)
-                                AngleReadout(label: "ROLL",  degrees: manager.roll)
-                            }
-                            .padding()
-                            .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
+                            readouts
                             Spacer()
                         }
                         .frame(maxWidth: .infinity)
@@ -32,26 +20,17 @@ struct SpiritLevelView: View {
                     .padding(.horizontal, 32)
                 } else {
                     VStack(spacing: 32) {
-                        Text("Place your phone flat against a surface.\nHaptics fire when perfectly level.")
+                        Text(manager.isPlumbMode
+                            ? "Hold the phone upright against a wall or frame.\nHaptics fire when perfectly plumb."
+                            : "Place your phone flat against a surface.\nHaptics fire when perfectly level.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
+                            .animation(.easeInOut, value: manager.isPlumbMode)
 
-                        BubbleLevel(
-                            pitch: manager.pitch,
-                            roll: manager.roll,
-                            isLevel: manager.isLevel,
-                            orientation: manager.deviceOrientation
-                        )
-                        .frame(width: 280, height: 280)
-
-                        HStack(spacing: 48) {
-                            AngleReadout(label: "PITCH", degrees: manager.pitch)
-                            AngleReadout(label: "ROLL",  degrees: manager.roll)
-                        }
-                        .padding()
-                        .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
+                        levelDisplay(size: 280)
+                        readouts
                     }
                     .padding()
                 }
@@ -62,8 +41,46 @@ struct SpiritLevelView: View {
             .navigationBarTitleDisplayMode(.automatic)
             .withSettingsToolbar()
         }
+        .keepsScreenAwake()
         .onAppear { manager.start() }
         .onDisappear { manager.stop() }
+    }
+
+    // Switch presentation based on how the phone is held: a flat bubble level on
+    // a surface, or a plumb tube when held vertically (where attitude pitch/roll
+    // hit gimbal lock and can't drive a meaningful bubble).
+    @ViewBuilder
+    private func levelDisplay(size: CGFloat) -> some View {
+        if manager.isPlumbMode {
+            PlumbTube(angle: manager.plumbAngle, isLevel: manager.isLevel)
+                .frame(width: size, height: size * 0.42)
+                .frame(height: size)   // keep the layout slot the same height as the bubble
+        } else {
+            BubbleLevel(
+                pitch: manager.pitch,
+                roll: manager.roll,
+                isLevel: manager.isLevel,
+                orientation: manager.deviceOrientation
+            )
+            .frame(width: size, height: size)
+        }
+    }
+
+    @ViewBuilder
+    private var readouts: some View {
+        Group {
+            if manager.isPlumbMode {
+                AngleReadout(label: "TILT", degrees: manager.plumbAngle)
+                    .frame(minWidth: 120)
+            } else {
+                HStack(spacing: 48) {
+                    AngleReadout(label: "PITCH", degrees: manager.pitch)
+                    AngleReadout(label: "ROLL",  degrees: manager.roll)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -128,6 +145,47 @@ private struct BubbleLevel: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Spirit level")
         .accessibilityValue("Pitch \(String(format: "%.1f", pitch))°, roll \(String(format: "%.1f", roll))°. \(isLevel ? "Level" : "Not level").")
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+}
+
+// Single-axis tube level for checking verticality (plumb). The bubble slides
+// horizontally as the phone leans off-plumb; centred and green means plumb.
+private struct PlumbTube: View {
+    let angle: Double
+    let isLevel: Bool
+
+    var body: some View {
+        GeometryReader { geo in
+            let maxOffset = geo.size.width / 2 - 34
+            let dx = CGFloat(max(-1, min(angle / 15.0, 1))) * maxOffset
+
+            ZStack {
+                Capsule()
+                    .fill(Color(.tertiarySystemBackground))
+                Capsule()
+                    .stroke(isLevel ? Color.green : Color.primary.opacity(0.15), lineWidth: 3)
+                    .animation(.snappy, value: isLevel)
+
+                // Centre target the bubble should sit between when plumb.
+                HStack(spacing: 46) {
+                    Capsule().frame(width: 2)
+                    Capsule().frame(width: 2)
+                }
+                .frame(height: geo.size.height * 0.55)
+                .foregroundStyle(Color.primary.opacity(isLevel ? 0.0 : 0.18))
+
+                Circle()
+                    .fill(isLevel ? Color.green : Color.accentColor)
+                    .frame(width: 46, height: 46)
+                    .shadow(color: (isLevel ? Color.green : Color.accentColor).opacity(0.6), radius: 12)
+                    .offset(x: dx)
+                    .animation(.interactiveSpring(response: 0.38, dampingFraction: 0.68), value: dx)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Plumb level")
+        .accessibilityValue("\(String(format: "%.1f", abs(angle)))° from vertical. \(isLevel ? "Plumb" : "Not plumb").")
         .accessibilityAddTraits(.updatesFrequently)
     }
 }

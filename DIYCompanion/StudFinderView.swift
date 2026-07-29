@@ -3,7 +3,7 @@ import SwiftUI
 struct StudFinderView: View {
     @StateObject private var manager = MagnetometerManager()
     @Environment(\.verticalSizeClass) private var vSize
-    @AppStorage("studFinderDisclaimerAccepted") private var disclaimerAccepted = false
+    @AppStorage(Prefs.studFinderDisclaimerAccepted) private var disclaimerAccepted = false
     @State private var showDisclaimer = false
 
     var body: some View {
@@ -48,6 +48,7 @@ struct StudFinderView: View {
             }
             .interactiveDismissDisabled()
         }
+        .keepsScreenAwake()
         .onAppear {
             manager.start()
             if !disclaimerAccepted { showDisclaimer = true }
@@ -64,7 +65,7 @@ struct StudFinderView: View {
 
         return ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.10), lineWidth: strokeWidth)
+                .stroke(Color(.systemFill), lineWidth: strokeWidth)
                 .frame(width: size, height: size)
 
             if !manager.isCalibrating {
@@ -129,7 +130,7 @@ struct StudFinderView: View {
                 Text("Hold phone away from walls")
                     .font(.subheadline).bold()
                     .padding(.vertical, 10).padding(.horizontal, 20)
-                    .background(Color.white.opacity(0.08), in: Capsule())
+                    .background(Color(.systemFill), in: Capsule())
                     .foregroundStyle(.secondary)
                 Label("Remove MagSafe accessories", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption2)
@@ -212,7 +213,7 @@ struct StudFinderView: View {
 
     private var statusLabel: String {
         switch manager.threat {
-        case .safe:    return "Clear — Safe to Drill"
+        case .safe:    return "No Metal Detected"
         case .caution: return "Metal Nearby — Proceed Carefully"
         case .danger:  return "Object Detected — Do Not Drill"
         }

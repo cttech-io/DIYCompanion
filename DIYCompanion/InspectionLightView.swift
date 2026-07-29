@@ -3,6 +3,7 @@ import SwiftUI
 struct InspectionLightView: View {
     @StateObject private var manager = TorchManager()
     @Environment(\.verticalSizeClass) private var vSize
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -39,7 +40,14 @@ struct InspectionLightView: View {
             .navigationBarTitleDisplayMode(.automatic)
             .withSettingsToolbar()
         }
+        .keepsScreenAwake()
         .onDisappear { manager.stop() }
+        .onChange(of: scenePhase) { _, phase in
+            // iOS force-disables the torch when the app backgrounds; mirror that
+            // in our model so the button/slider don't claim it's still on (which
+            // otherwise needs a wasted "off" tap to resync on return).
+            if phase == .background { manager.stop() }
+        }
     }
 
     private func torchButton(size: CGFloat) -> some View {
@@ -48,7 +56,7 @@ struct InspectionLightView: View {
         } label: {
             ZStack {
                 Circle()
-                    .fill(manager.intensity > 0 ? Color.yellow.opacity(0.15) : Color.white.opacity(0.07))
+                    .fill(manager.intensity > 0 ? Color.yellow.opacity(0.15) : Color(.systemFill))
                     .frame(width: size, height: size)
                 Image(systemName: "flashlight.on.fill")
                     .font(.system(size: size * 0.333))
