@@ -108,5 +108,20 @@ final class DIYCompanionLogicTests: XCTestCase {
             LevelManager.plumbAngleDegrees(gx: 0, gy: 1, orientation: .portraitUpsideDown),
             0, accuracy: 0.001
         )
+        // Landscape, held plumb: gravity lies along the long axis (gx ≈ ±1) with
+        // gy ≈ 0. Both landscape orientations must read ~0, not pinned near ±180.
+        XCTAssertEqual(
+            LevelManager.plumbAngleDegrees(gx: -1, gy: 0, orientation: .landscapeLeft),
+            0, accuracy: 0.001
+        )
+        XCTAssertEqual(
+            LevelManager.plumbAngleDegrees(gx: 1, gy: 0, orientation: .landscapeRight),
+            0, accuracy: 0.001
+        )
+        // landscapeLeft leaning 30°: gravity (−0.866, −0.5) → +30°.
+        XCTAssertEqual(
+            LevelManager.plumbAngleDegrees(gx: -sqrt(3) / 2, gy: -0.5, orientation: .landscapeLeft),
+            30, accuracy: 0.01
+        )
     }
 }

@@ -21,10 +21,6 @@ class LevelManager: ObservableObject {
     private let filter: Double = 0.15
     private var orientationToken: NSObjectProtocol?
 
-    // Cached so the 60 Hz motion callback never touches UserDefaults.
-    private var hapticsEnabled: Bool = UserDefaults.standard.object(forKey: Prefs.hapticsEnabled) as? Bool ?? true
-    private var defaultsToken: NSObjectProtocol?
-
     init() {
         haptic.prepare()
     }
@@ -40,15 +36,6 @@ class LevelManager: ObservableObject {
             if o.isValidInterfaceOrientation {
                 self?.deviceOrientation = o
             }
-        }
-
-        // Keep the cached haptics flag in step with Settings changes.
-        defaultsToken = NotificationCenter.default.addObserver(
-            forName: UserDefaults.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.hapticsEnabled = UserDefaults.standard.object(forKey: Prefs.hapticsEnabled) as? Bool ?? true
         }
 
         guard motionManager.isDeviceMotionAvailable else { return }
@@ -74,34 +61,35 @@ class LevelManager: ObservableObject {
             if !plumb {
                 level = abs(gx) < threshold && abs(gy) < threshold
             } else {
+                // Drive both the readout and the level state from the SAME angle,
+                // so the bubble is centred exactly when it reports plumb.
                 let angle = Self.plumbAngleDegrees(gx: gx, gy: gy, orientation: self.deviceOrientation)
                 self.plumbAngle = angle * self.filter + self.plumbAngle * (1 - self.filter)
-                switch self.deviceOrientation {
-                case .landscapeLeft, .landscapeRight:
-                    level = abs(gy) < threshold
-                default:
-                    level = abs(gx) < threshold
-                }
+                level = abs(angle) < 0.5   // degrees
             }
 
             if level != self.isLevel {
                 self.isLevel = level
-                if level && self.hapticsEnabled { self.haptic.impactOccurred() }
+                let hapticsOn = UserDefaults.standard.object(forKey: Prefs.hapticsEnabled) as? Bool ?? true
+                if level && hapticsOn { self.haptic.impactOccurred() }
             }
         }
     }
 
-    /// Angle of the phone's long axis from true vertical, in degrees, derived
-    /// from the gravity vector so it stays well-defined near the poles where
-    /// attitude pitch/roll are ambiguous. Zero = perfectly plumb.
+    /// Signed angle of the phone from true vertical, in degrees, derived from
+    /// gravity so it stays well-defined near the poles where attitude pitch/roll
+    /// are ambiguous. Projects gravity onto the screen plane (sx = toward screen
+    /// right, sy = toward screen top) for the current orientation, then measures
+    /// its lean from straight-down. Zero = perfectly plumb.
     static func plumbAngleDegrees(gx: Double, gy: Double, orientation: UIDeviceOrientation) -> Double {
-        let deg = 180.0 / Double.pi
+        let sx: Double, sy: Double
         switch orientation {
-        case .portraitUpsideDown: return atan2(-gx, gy)  * deg
-        case .landscapeLeft:      return atan2(-gy, gx)  * deg
-        case .landscapeRight:     return atan2(gy, -gx)  * deg
-        default:                  return atan2(gx, -gy)  * deg  // portrait
+        case .portraitUpsideDown: sx = -gx; sy = -gy
+        case .landscapeLeft:      sx = -gy; sy =  gx
+        case .landscapeRight:     sx =  gy; sy = -gx
+        default:                  sx =  gx; sy =  gy   // portrait
         }
+        return atan2(sx, -sy) * (180.0 / Double.pi)
     }
 
     func stop() {
@@ -109,10 +97,6 @@ class LevelManager: ObservableObject {
         if let token = orientationToken {
             NotificationCenter.default.removeObserver(token)
             orientationToken = nil
-        }
-        if let token = defaultsToken {
-            NotificationCenter.default.removeObserver(token)
-            defaultsToken = nil
         }
         UIDevice.current.endGeneratingDeviceOrientationNotifications()
     }
@@ -202,6 +186,7 @@ class NoiseManager: ObservableObject {
     private var recorder: AVAudioRecorder?
     private var timer: Timer?
     private var interruptionObserver: NSObjectProtocol?
+    private var deadTicks = 0   // consecutive ticks reading the dead-recorder floor
 
     func start() {
         registerInterruptionObserver()
@@ -225,9 +210,10 @@ class NoiseManager: ObservableObject {
         switch AVAudioApplication.shared.recordPermission {
         case .granted:
             if permissionDenied { permissionDenied = false }
-            if recorder == nil || recorder?.isRecording == false {
-                beginRecording()
-            }
+            // Always rebuild: an interrupted AVAudioRecorder keeps reporting
+            // isRecording == true while producing only the −160 dBFS floor, so
+            // we can't trust that flag to decide whether a restart is needed.
+            beginRecording()
         case .denied:
             permissionDenied = true
         case .undetermined:
@@ -247,15 +233,12 @@ class NoiseManager: ObservableObject {
             guard let self,
                   let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
-            switch type {
-            case .began:
-                // Recorder is dead; stop the timer so the gauge doesn't freeze
-                // reading a stale value against it.
-                self.timer?.invalidate(); self.timer = nil
-            case .ended:
+            // On `.ended`, rebuild immediately (fast path). We deliberately do
+            // NOT tear the timer down on `.began`: keeping it alive lets tick()'s
+            // watchdog self-heal even if `.ended` is never delivered (a common
+            // outcome for Siri, which resigns the app without a clean resume).
+            if type == .ended {
                 self.beginRecording()
-            @unknown default:
-                break
             }
         }
     }
@@ -281,6 +264,7 @@ class NoiseManager: ObservableObject {
         rec.isMeteringEnabled = true
         rec.record()
         recorder = rec
+        deadTicks = 0
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 20.0, repeats: true) { [weak self] _ in
             self?.tick()
         }
@@ -290,6 +274,19 @@ class NoiseManager: ObservableObject {
         guard let r = recorder else { return }
         r.updateMeters()
         let raw = r.averagePower(forChannel: 0)   // dBFS −160…0
+
+        // Watchdog: after an interruption the recorder can report isRecording ==
+        // true yet only ever return the −160 dBFS floor. A real mic never sits
+        // at the floor (even a quiet room is ~−60), so a run of floor readings
+        // means the recorder is dead — rebuild it. This self-heals the freeze
+        // regardless of whether an `.ended` interruption notification arrives.
+        if raw <= -159 || !r.isRecording {
+            deadTicks += 1
+            if deadTicks >= 5 { beginRecording() }
+            return
+        }
+        deadTicks = 0
+
         // iPhone mic clips near 120 dB SPL at 0 dBFS, giving a usable SPL approximation.
         let spl = max(30.0, min(120.0, Double(raw) + 120.0))
         decibels = Float(spl)
