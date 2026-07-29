@@ -68,10 +68,19 @@ class LevelManager: ObservableObject {
                 level = abs(angle) < 0.5   // degrees
             }
 
+            // Keep the haptic engine warm as we approach level; a generator that
+            // has gone idle (~a couple of seconds) can silently drop its impact.
+            let nearLevel = plumb ? abs(self.plumbAngle) < 3.0
+                                  : (abs(gx) < 0.05 && abs(gy) < 0.05)
+            if nearLevel && !self.isLevel { self.haptic.prepare() }
+
             if level != self.isLevel {
                 self.isLevel = level
                 let hapticsOn = UserDefaults.standard.object(forKey: Prefs.hapticsEnabled) as? Bool ?? true
-                if level && hapticsOn { self.haptic.impactOccurred() }
+                if level && hapticsOn {
+                    self.haptic.impactOccurred()
+                    self.haptic.prepare()   // ready for the next crossing
+                }
             }
         }
     }
@@ -313,7 +322,13 @@ class NoiseManager: ObservableObject {
             NotificationCenter.default.removeObserver(token)
             interruptionObserver = nil
         }
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        let session = AVAudioSession.sharedInstance()
+        try? session.setActive(false, options: .notifyOthersOnDeactivation)
+        // A `.record` category silences UIFeedbackGenerator haptics app-wide, and
+        // the category persists after deactivation — which was killing the Spirit
+        // Level's haptic once the Noise Meter had been opened. Reset to a
+        // haptic-friendly category on the way out.
+        try? session.setCategory(.ambient)
     }
 
     deinit { stop() }
