@@ -74,6 +74,13 @@ final class DIYCompanionLogicTests: XCTestCase {
         XCTAssertEqual(MagnetometerManager.classify(deviation: 55, sensitivity: 0.5), .caution)
     }
 
+    func testThreatSeverityOrdering_drivesEscalationHaptic() {
+        // The scanner haptic fires only on escalation, decided by Comparable
+        // ordering — which is derived from declaration order, so lock it in.
+        XCTAssertLessThan(MagnetometerManager.Threat.safe, .caution)
+        XCTAssertLessThan(MagnetometerManager.Threat.caution, .danger)
+    }
+
     // MARK: - Flashlight naming (part 2)
 
     func testFlashlightName_britishVariants() {

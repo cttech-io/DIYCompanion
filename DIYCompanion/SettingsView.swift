@@ -90,7 +90,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Haptic Feedback")
                         .font(.subheadline)
-                    Text("Fires when the spirit level is perfectly level.")
+                    Text("Fires when the spirit level is perfectly level and when the wall scanner detects metal.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

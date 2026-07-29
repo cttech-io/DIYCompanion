@@ -115,13 +115,19 @@ class LevelManager: ObservableObject {
 
 class MagnetometerManager: ObservableObject {
     private let motionManager = CMMotionManager()
+    private let haptic = UIImpactFeedbackGenerator(style: .heavy)
 
     @Published var deviation: Double = 0.0   // µT above calibrated baseline
     @Published var threat: Threat = .safe
     @Published var sensitivity: Double = 1.0
     @Published var isCalibrating: Bool = false
 
-    enum Threat { case safe, caution, danger }
+    // Declaration order defines severity: safe < caution < danger.
+    enum Threat: Comparable { case safe, caution, danger }
+
+    init() {
+        haptic.prepare()
+    }
 
     // Baseline is a scalar magnitude, not a vector.
     // Magnitude is rotation-invariant: rotating the phone doesn't change
@@ -154,15 +160,38 @@ class MagnetometerManager: ObservableObject {
 
             let dev = abs(mag - self.baselineMag)
             self.deviation = dev
-            self.threat = Self.classify(deviation: dev, sensitivity: self.sensitivity)
+            let newThreat = Self.classify(deviation: dev, sensitivity: self.sensitivity)
+
+            // Keep the haptic engine warm as the reading approaches the caution
+            // threshold; a generator that has gone idle can silently drop its
+            // impact (same pattern as LevelManager).
+            if newThreat == .safe, dev > 0.7 * Self.baseCaution / self.sensitivity {
+                self.haptic.prepare()
+            }
+
+            if newThreat != self.threat {
+                let escalated = newThreat > self.threat
+                self.threat = newThreat
+                let hapticsOn = UserDefaults.standard.object(forKey: Prefs.hapticsEnabled) as? Bool ?? true
+                // Buzz on escalation only (safe→caution, caution→danger) so a
+                // sweep pulses as it crosses metal without chattering on the
+                // way back down.
+                if escalated && hapticsOn {
+                    self.haptic.impactOccurred(intensity: newThreat == .danger ? 1.0 : 0.7)
+                    self.haptic.prepare()   // ready for the next crossing
+                }
+            }
         }
     }
 
     /// Thresholds are in deviation µT; sensitivity scales them down/up.
     /// Default (1.0×): caution at 25 µT, danger at 60 µT.
+    static let baseCaution = 25.0
+    static let baseDanger  = 60.0
+
     static func classify(deviation dev: Double, sensitivity: Double) -> Threat {
-        let caution = 25.0 / sensitivity
-        let danger  = 60.0 / sensitivity
+        let caution = baseCaution / sensitivity
+        let danger  = baseDanger  / sensitivity
         return dev > danger ? .danger : dev > caution ? .caution : .safe
     }
 
@@ -216,6 +245,12 @@ class NoiseManager: ObservableObject {
     /// Re-check on foreground: recover a recorder that an interruption left
     /// dead, and pick up a permission the user granted in Settings while away.
     func restartIfNeeded() {
+        // Only act if the meter was actually running (stop() nils the recorder
+        // on tab switch) or is recovering from a denial. scenePhase onChange
+        // fires even when this tab isn't frontmost, and rebuilding here would
+        // re-activate the mic from another tool — showing the mic indicator and
+        // re-silencing haptics app-wide via the .record category.
+        guard recorder != nil || permissionDenied else { return }
         switch AVAudioApplication.shared.recordPermission {
         case .granted:
             if permissionDenied { permissionDenied = false }

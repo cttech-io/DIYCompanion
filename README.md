@@ -24,7 +24,7 @@
 Uses the iPhone's accelerometer to display a real-time bubble level. Works flat on a surface or held vertically against a wall. Automatically adapts to portrait and landscape orientation. Haptic feedback fires the moment the device is perfectly level.
 
 ### 📡 Wall Scanner
-Uses the iPhone's magnetometer to detect metal objects behind walls — studs, screws, pipes, and wiring. Automatically calibrates to the ambient magnetic field on launch so readings are relative to your environment, not Earth's field. Adjustable sensitivity slider for different wall materials and conditions.
+Uses the iPhone's magnetometer to detect metal objects behind walls — studs, screws, pipes, and wiring. Automatically calibrates to the ambient magnetic field on launch so readings are relative to your environment, not Earth's field. Adjustable sensitivity slider for different wall materials and conditions. Haptic pulses fire as the reading crosses into the caution and danger bands, so you can keep your eyes on the wall while sweeping.
 
 > **Note:** Remove MagSafe accessories before scanning. The ring magnets will interfere with readings. Run a fresh calibration before each scan.
 
