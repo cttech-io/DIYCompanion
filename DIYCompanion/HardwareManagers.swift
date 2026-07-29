@@ -38,6 +38,14 @@ class LevelManager: ObservableObject {
             }
         }
 
+        #if targetEnvironment(simulator)
+        // No motion hardware in the Simulator: drive a representative animation
+        // that settles to perfectly level (green) so screenshots, App Previews,
+        // and SwiftUI previews show the real UI. Compiled out of device builds.
+        startSimulatedMotion()
+        return
+        #endif
+
         guard motionManager.isDeviceMotionAvailable else { return }
         motionManager.deviceMotionUpdateInterval = 1.0 / 60.0
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
@@ -102,6 +110,9 @@ class LevelManager: ObservableObject {
     }
 
     func stop() {
+        #if targetEnvironment(simulator)
+        simGeneration &+= 1
+        #endif
         motionManager.stopDeviceMotionUpdates()
         if let token = orientationToken {
             NotificationCenter.default.removeObserver(token)
@@ -109,6 +120,28 @@ class LevelManager: ObservableObject {
         }
         UIDevice.current.endGeneratingDeviceOrientationNotifications()
     }
+
+    #if targetEnvironment(simulator)
+    private var simGeneration = 0
+
+    /// Simulator-only: glide from a slight tilt to perfectly level (green),
+    /// mirroring what the real sensor path publishes. The view's own implicit
+    /// animations handle the transition.
+    private func startSimulatedMotion() {
+        simGeneration &+= 1
+        let gen = simGeneration
+        isPlumbMode = false
+        pitch = -3.5
+        roll = 5.0
+        isLevel = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak self] in
+            guard let self, gen == self.simGeneration else { return }
+            self.pitch = 0
+            self.roll = 0
+            self.isLevel = true
+        }
+    }
+    #endif
 
     deinit { motionManager.stopDeviceMotionUpdates() }
 }
@@ -140,6 +173,13 @@ class MagnetometerManager: ObservableObject {
 
     func start() {
         beginCalibration()
+        #if targetEnvironment(simulator)
+        // No magnetometer in the Simulator: after a brief calibration, animate a
+        // realistic sweep that peaks then settles on a clear detection, so the
+        // scanner shows its real gauge UI. Compiled out of device builds.
+        startSimulatedField()
+        return
+        #endif
         guard motionManager.isDeviceMotionAvailable else { return }
         motionManager.deviceMotionUpdateInterval = 1.0 / 30.0
         motionManager.startDeviceMotionUpdates(using: .xArbitraryCorrectedZVertical, to: .main) { [weak self] data, _ in
@@ -197,6 +237,9 @@ class MagnetometerManager: ObservableObject {
 
     func recalibrate() {
         beginCalibration()
+        #if targetEnvironment(simulator)
+        startSimulatedField()
+        #endif
     }
 
     private func beginCalibration() {
@@ -207,8 +250,37 @@ class MagnetometerManager: ObservableObject {
     }
 
     func stop() {
+        #if targetEnvironment(simulator)
+        simGeneration &+= 1
+        #endif
         motionManager.stopDeviceMotionUpdates()
     }
+
+    #if targetEnvironment(simulator)
+    private var simGeneration = 0
+
+    /// Simulator-only: fake a calibration then a sweep that rises to a strong
+    /// reading and settles into the caution band, so the scanner presents its
+    /// real gauge instead of a "hardware required" placeholder.
+    private func startSimulatedField() {
+        simGeneration &+= 1
+        let gen = simGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self, gen == self.simGeneration else { return }
+            self.isCalibrating = false
+            self.setSimulatedDeviation(72)   // sweep peak → danger
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { [weak self] in
+            guard let self, gen == self.simGeneration else { return }
+            self.setSimulatedDeviation(46)   // settle → caution
+        }
+    }
+
+    private func setSimulatedDeviation(_ value: Double) {
+        deviation = value
+        threat = Self.classify(deviation: value, sensitivity: sensitivity)
+    }
+    #endif
 
     deinit { motionManager.stopDeviceMotionUpdates() }
 }
