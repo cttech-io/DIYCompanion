@@ -1,15 +1,8 @@
 import SwiftUI
+import UIKit
 
 enum AppAppearance: String, CaseIterable {
     case system, light, dark
-
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .system: return nil
-        case .light:  return .light
-        case .dark:   return .dark
-        }
-    }
 
     var label: String {
         switch self {
@@ -17,6 +10,28 @@ enum AppAppearance: String, CaseIterable {
         case .light:  return "Light"
         case .dark:   return "Dark"
         }
+    }
+
+    var uiStyle: UIUserInterfaceStyle {
+        switch self {
+        case .system: return .unspecified   // Follow the OS.
+        case .light:  return .light
+        case .dark:   return .dark
+        }
+    }
+
+    /// Apply the chosen appearance app-wide by overriding every window's
+    /// interface style. iOS 18+ broke SwiftUI's `preferredColorScheme` (it will
+    /// not revert out of dark), so we drive `overrideUserInterfaceStyle`
+    /// directly. Call this from where the change originates (the Settings
+    /// picker) and at launch — an @AppStorage `onChange` outside the Settings
+    /// sheet does not fire reliably across the sheet boundary.
+    static func apply(_ raw: String) {
+        let style = AppAppearance(rawValue: raw)?.uiStyle ?? .unspecified
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .forEach { $0.overrideUserInterfaceStyle = style }
     }
 }
 
@@ -42,6 +57,10 @@ struct SettingsView: View {
                 .padding()
             }
             .background(Color(.secondarySystemBackground))
+            .onChange(of: appearance) { _, newValue in
+                // Applied here, from inside the sheet, so it fires reliably.
+                AppAppearance.apply(newValue)
+            }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
