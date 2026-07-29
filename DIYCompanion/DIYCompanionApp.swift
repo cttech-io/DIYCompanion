@@ -8,21 +8,23 @@ struct DIYCompanionApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                // Keep this for a flash-free initial paint. It is honoured at
-                // launch but SwiftUI does not reliably re-apply it to the live
-                // window when the value changes at runtime from a sheet (the
-                // Settings screen), so the override below drives live changes.
-                .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
+                // Single source of truth for appearance: drive the window's
+                // interface style ourselves, at launch and on every change.
+                .onAppear { Self.applyOverrideStyle(appearance) }
                 .onChange(of: appearance) { _, newValue in
                     Self.applyOverrideStyle(newValue)
                 }
         }
     }
 
-    /// Force the active window's interface style to match the chosen appearance.
-    /// Setting `overrideUserInterfaceStyle` updates the whole hierarchy (semantic
-    /// colours included) immediately, even from a presented sheet — unlike the
-    /// root `preferredColorScheme`, whose runtime updates SwiftUI can drop.
+    /// Force every window's interface style to match the chosen appearance.
+    /// We deliberately do NOT use the root `.preferredColorScheme`: it is
+    /// honoured at launch but SwiftUI drops its runtime updates when the value
+    /// changes from a presented sheet (the Settings screen). Worse, mixing the
+    /// two made Dark "sticky" — SwiftUI kept re-asserting a stale Dark
+    /// preference and cancelled any revert to Light/System. Setting
+    /// `overrideUserInterfaceStyle` directly updates the whole hierarchy
+    /// (semantic colours included) immediately and in every direction.
     private static func applyOverrideStyle(_ raw: String) {
         let style: UIUserInterfaceStyle
         switch AppAppearance(rawValue: raw) {
