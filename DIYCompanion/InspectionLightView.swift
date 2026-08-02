@@ -37,7 +37,7 @@ struct InspectionLightView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.secondarySystemBackground))
             .navigationTitle(flashlightName)
-            .navigationBarTitleDisplayMode(.automatic)
+            .navigationBarTitleDisplayMode(.inline)
             .withSettingsToolbar()
         }
         .keepsScreenAwake()

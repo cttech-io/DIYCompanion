@@ -34,24 +34,29 @@ struct NoiseMeterView: View {
                     }
                     .padding(.horizontal, 32)
                 } else {
-                    VStack(spacing: 24) {
-                        Text("Hold near a sound source to measure ambient noise level.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                        gaugeRing(size: 240)
-                        statusChip
-                        peakCard
-                            .padding(.horizontal)
+                    GeometryReader { proxy in
+                        ScrollView {
+                            VStack(spacing: 24) {
+                                Text("Hold near a sound source to measure ambient noise level.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                                gaugeRing(size: 240)
+                                statusChip
+                                peakCard
+                                    .padding(.horizontal)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                        }
                     }
-                    .padding()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Noise Meter")
-            .navigationBarTitleDisplayMode(.automatic)
+            .navigationBarTitleDisplayMode(.inline)
             .withSettingsToolbar()
         }
         .keepsScreenAwake()

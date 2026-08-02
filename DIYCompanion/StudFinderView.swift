@@ -23,22 +23,27 @@ struct StudFinderView: View {
                     }
                     .padding(.horizontal, 32)
                 } else {
-                    VStack(spacing: 24) {
-                        hintText
-                        gaugeRing(size: 240)
-                        statusChip
-                        sensitivityCard
-                            .padding(.horizontal)
-                        calibrateCard
-                            .padding(.horizontal)
+                    GeometryReader { proxy in
+                        ScrollView {
+                            VStack(spacing: 24) {
+                                hintText
+                                gaugeRing(size: 240)
+                                statusChip
+                                sensitivityCard
+                                    .padding(.horizontal)
+                                calibrateCard
+                                    .padding(.horizontal)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                        }
                     }
-                    .padding()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Wall Scanner")
-            .navigationBarTitleDisplayMode(.automatic)
+            .navigationBarTitleDisplayMode(.inline)
             .withSettingsToolbar()
         }
         .sheet(isPresented: $showDisclaimer) {

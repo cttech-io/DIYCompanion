@@ -3,14 +3,34 @@ import UIKit
 
 struct RulerView: View {
     @AppStorage(Prefs.useMetric) private var isMetric: Bool = true
+    @AppStorage(Prefs.rulerCalibratedPPI) private var calibratedPPI: Double = 0
     @Environment(\.verticalSizeClass) private var vSize
     @State private var showSettings = false
+    @State private var showCalibration = false
     @State private var markerA: CGFloat? = nil
     @State private var markerB: CGFloat? = nil
     @State private var activeMarker: MarkerID? = nil
     @State private var didCopy = false
 
     private enum MarkerID { case a, b }
+
+    /// The scale used for all readouts and tick spacing. A user calibration
+    /// (needed on iPad, where compatibility-mode scaling makes the physical
+    /// density unknowable) overrides the per-model estimate when present.
+    private var effectivePointsPerInch: CGFloat {
+        calibratedPPI > 0 ? CGFloat(calibratedPPI) : Self.pointsPerInch
+    }
+
+    /// True when the hardware is an iPad — detected even while the iPhone-only
+    /// app runs in iPhone-compatibility mode, where `userInterfaceIdiom` wrongly
+    /// reports `.phone`. `uname` reads the real model; the Simulator exposes it
+    /// through an environment variable instead.
+    static let isRunningOnIPad: Bool = {
+        if let simModel = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] {
+            return simModel.hasPrefix("iPad")
+        }
+        return currentModelIdentifier().hasPrefix("iPad")
+    }()
 
     // Physical points per inch for the current device.
     // Uses the formula: physicalPPI × boundsLongSide / nativeLongSide,
@@ -102,7 +122,7 @@ struct RulerView: View {
     }
 
     private func readout(_ pos: CGFloat) -> String {
-        Self.readout(points: pos, pointsPerInch: Self.pointsPerInch, isMetric: isMetric)
+        Self.readout(points: pos, pointsPerInch: effectivePointsPerInch, isMetric: isMetric)
     }
 
     private var spanText: String? {
@@ -134,7 +154,7 @@ struct RulerView: View {
 
     // MARK: - Accessibility
 
-    private var mmInPoints: CGFloat { Self.pointsPerInch / 25.4 }
+    private var mmInPoints: CGFloat { effectivePointsPerInch / 25.4 }
 
     private var accessibilityValueText: String {
         if let a = markerA, let b = markerB, let span = spanText {
@@ -193,7 +213,7 @@ struct RulerView: View {
             }
             .ignoresSafeArea(edges: vSize == .compact ? .top : [])
             .navigationTitle(vSize == .compact ? "" : "Ruler")
-            .navigationBarTitleDisplayMode(.automatic)
+            .navigationBarTitleDisplayMode(.inline)
             .onChange(of: vSize) { _, _ in
                 // Markers are raw offsets along the active axis; on a portrait⇄
                 // landscape flip that axis changes, so a stale offset would land
@@ -212,6 +232,48 @@ struct RulerView: View {
             }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
+        .fullScreenCover(isPresented: $showCalibration) {
+            RulerCalibrationView(
+                pointsPerInch: effectivePointsPerInch,
+                onSave: { calibratedPPI = Double($0) },
+                onReset: { calibratedPPI = 0 }
+            )
+        }
+    }
+
+    // MARK: - Calibration notice (iPad only)
+
+    // Shown only on iPad, where iPhone-compatibility-mode scaling makes the
+    // physical density unknowable until the user calibrates against a real card.
+    @ViewBuilder
+    private var calibrationNotice: some View {
+        HStack(spacing: 10) {
+            Image(systemName: calibratedPPI > 0 ? "checkmark.circle.fill" : "ruler.fill")
+                .foregroundStyle(calibratedPPI > 0 ? .green : .orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(calibratedPPI > 0 ? "Calibrated for this screen" : "Calibrate for accurate measurements")
+                    .font(.footnote).bold()
+                Text(calibratedPPI > 0
+                     ? "iPad detected. Tap to recalibrate."
+                     : "iPad detected — the ruler must be calibrated to measure accurately.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Text(calibratedPPI > 0 ? "Recalibrate" : "Calibrate")
+                .font(.caption).bold()
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(calibratedPPI > 0 ? Color.secondary : Color.accentColor, in: Capsule())
+        }
+        .padding(12)
+        .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
+        .contentShape(Rectangle())
+        .onTapGesture { showCalibration = true }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens ruler calibration")
     }
 
     // MARK: - Portrait layout
@@ -223,7 +285,7 @@ struct RulerView: View {
             HStack(spacing: 0) {
                 RulerStrip(
                     length: geo.size.height,
-                    pointsPerInch: Self.pointsPerInch,
+                    pointsPerInch: effectivePointsPerInch,
                     isMetric: isMetric,
                     isHorizontal: false
                 )
@@ -285,6 +347,17 @@ struct RulerView: View {
             unitPicker
                 .padding(.bottom, 20)
                 .padding(.trailing, 20)
+
+            // Layer 5: iPad calibration notice, kept clear of the ruler strip
+            if Self.isRunningOnIPad {
+                VStack {
+                    calibrationNotice
+                        .padding(.top, 8)
+                    Spacer()
+                }
+                .padding(.leading, rulerW + 8)
+                .padding(.trailing, 12)
+            }
         }
     }
 
@@ -297,7 +370,7 @@ struct RulerView: View {
             VStack(alignment: .leading, spacing: 0) {
                 RulerStrip(
                     length: geo.size.width,
-                    pointsPerInch: Self.pointsPerInch,
+                    pointsPerInch: effectivePointsPerInch,
                     isMetric: isMetric,
                     isHorizontal: true
                 )
@@ -368,6 +441,20 @@ struct RulerView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
+            }
+
+            // Layer 5: iPad calibration notice, kept clear of the ruler strip
+            if Self.isRunningOnIPad {
+                VStack {
+                    HStack {
+                        calibrationNotice
+                            .frame(maxWidth: 460)
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .padding(.leading, 20)
+                .padding(.top, rulerH + 12)
             }
         }
     }

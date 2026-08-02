@@ -38,7 +38,7 @@ struct SpiritLevelView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Spirit Level")
-            .navigationBarTitleDisplayMode(.automatic)
+            .navigationBarTitleDisplayMode(.inline)
             .withSettingsToolbar()
         }
         .keepsScreenAwake()

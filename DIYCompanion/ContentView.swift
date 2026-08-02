@@ -23,12 +23,12 @@ struct ContentView: View {
         TabView {
             SpiritLevelView()
                 .tabItem {
-                    Label("Spirit Level", systemImage: "level")
+                    Label("Level", systemImage: "level")
                 }
 
             StudFinderView()
                 .tabItem {
-                    Label("Wall Scanner", systemImage: "waveform.path.ecg")
+                    Label("Scanner", systemImage: "waveform.path.ecg")
                 }
 
             InspectionLightView()
@@ -38,7 +38,7 @@ struct ContentView: View {
 
             NoiseMeterView()
                 .tabItem {
-                    Label("Noise Meter", systemImage: "waveform")
+                    Label("Noise", systemImage: "waveform")
                 }
 
             RulerView()
