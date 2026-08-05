@@ -19,32 +19,52 @@ struct ContentView: View {
     // and we must count each app launch exactly once.
     private static var didHandleLaunch = false
 
+    @State private var selectedTab: Int = ContentView.initialTab
+
+    /// Always the first tab on device. In the Simulator, honours DIY_START_TAB
+    /// so the screenshot tooling can open a tool directly without needing to
+    /// drive the tab bar — see `Screenshots/capture-raw-screenshots.sh`.
+    private static var initialTab: Int {
+        #if targetEnvironment(simulator)
+        if let raw = ProcessInfo.processInfo.environment["DIY_START_TAB"],
+           let tab = Int(raw), (0...4).contains(tab) {
+            return tab
+        }
+        #endif
+        return 0
+    }
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             SpiritLevelView()
                 .tabItem {
                     Label("Level", systemImage: "level")
                 }
+                .tag(0)
 
             StudFinderView()
                 .tabItem {
                     Label("Scanner", systemImage: "waveform.path.ecg")
                 }
+                .tag(1)
 
             InspectionLightView()
                 .tabItem {
                     Label(flashlightName, systemImage: "flashlight.on.fill")
                 }
+                .tag(2)
 
             NoiseMeterView()
                 .tabItem {
                     Label("Noise", systemImage: "waveform")
                 }
+                .tag(3)
 
             RulerView()
                 .tabItem {
                     Label("Ruler", systemImage: "ruler")
                 }
+                .tag(4)
         }
         .task { handleLaunch() }
     }

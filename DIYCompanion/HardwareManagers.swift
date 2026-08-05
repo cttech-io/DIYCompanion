@@ -460,6 +460,16 @@ class TorchManager: ObservableObject {
         return (dev?.hasTorch == true) ? dev : nil
     }()
 
+    init() {
+        #if targetEnvironment(simulator)
+        // No torch hardware in the Simulator, so the tool would otherwise always
+        // screenshot at 0% — a dark button and an empty slider. Open on a
+        // representative lit state instead. Compiled out of device builds.
+        intensity = 0.85
+        lastOnLevel = 0.85
+        #endif
+    }
+
     func toggle() {
         intensity = intensity > 0 ? 0 : lastOnLevel
     }

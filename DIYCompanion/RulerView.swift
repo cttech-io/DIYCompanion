@@ -7,8 +7,8 @@ struct RulerView: View {
     @Environment(\.verticalSizeClass) private var vSize
     @State private var showSettings = false
     @State private var showCalibration = false
-    @State private var markerA: CGFloat? = nil
-    @State private var markerB: CGFloat? = nil
+    @State private var markerA: CGFloat? = RulerView.simulatorSeed(0.26)
+    @State private var markerB: CGFloat? = RulerView.simulatorSeed(0.63)
     @State private var activeMarker: MarkerID? = nil
     @State private var didCopy = false
 
@@ -144,6 +144,20 @@ struct RulerView: View {
         }
     }
 
+    /// Simulator-only: open with two markers already placed so the ruler
+    /// screenshots as a measurement in progress rather than a blank strip.
+    /// No-op on device.
+    /// Simulator-only: an initial marker position, as a fraction down the
+    /// screen, so the ruler screenshots as a measurement in progress rather
+    /// than a blank strip. Returns nil on device, where markers start empty.
+    static func simulatorSeed(_ fraction: CGFloat) -> CGFloat? {
+        #if targetEnvironment(simulator)
+        return UIScreen.main.bounds.height * fraction
+        #else
+        return nil
+        #endif
+    }
+
     private func clearMarkers() {
         withAnimation(.easeInOut) {
             markerA = nil
@@ -218,9 +232,15 @@ struct RulerView: View {
                 // Markers are raw offsets along the active axis; on a portrait⇄
                 // landscape flip that axis changes, so a stale offset would land
                 // on the wrong (possibly off-screen) spot. Clear them.
+                //
+                // Not in the Simulator: this also fires as the size class
+                // resolves during first layout, which would wipe the seeded
+                // screenshot markers before anything is captured.
+                #if !targetEnvironment(simulator)
                 markerA = nil
                 markerB = nil
                 activeMarker = nil
+                #endif
             }
             .toolbar(vSize == .compact ? .hidden : .visible, for: .navigationBar)
             .toolbar {
@@ -281,6 +301,7 @@ struct RulerView: View {
     private func portraitLayout(geo: GeometryProxy) -> some View {
         let rulerW: CGFloat = 68
         return ZStack(alignment: .bottomTrailing) {
+
             // Layer 1: ruler strip + gesture area
             HStack(spacing: 0) {
                 RulerStrip(
