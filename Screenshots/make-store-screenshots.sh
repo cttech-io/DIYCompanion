@@ -18,13 +18,18 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 SRC="."
-OUT="store"
+OUT="store"        # 6.9" — the primary App Store Connect slot
+OUT65="store-6.5"  # 6.5" — a separate slot, with its own accepted sizes
 WEB="web"
-mkdir -p "$OUT" "$WEB"
+mkdir -p "$OUT" "$OUT65" "$WEB"
 
-# Canvas — 6.9" iPhone, the size App Store Connect requires
+# Canvas — 6.9" iPhone (iPhone 16/17 Pro Max)
 W=1320
 H=2868
+
+# 6.5" slot accepts 1242x2688 or 1284x2778; the taller one wastes less.
+W65=1284
+H65=2778
 
 # Brand palette, sampled from the app icon and the app's own UI
 NAVY_TOP="#0F1B3D"
@@ -215,6 +220,23 @@ magick "${OUT}/07.png" \
 echo "  07.png  Five essential tools."
 
 rm -f /tmp/diy-icon-$$.png /tmp/diy-thumb-$$-*.png /tmp/diy-row1-$$.png /tmp/diy-row2-$$.png
+
+# ---------------------------------------------------------------------------
+# 6.5" set — App Store Connect has a separate upload slot for it, which accepts
+# 1242x2688 or 1284x2778 and rejects the 6.9" size with a "dimensions are wrong"
+# error. Derived from the finished 6.9" images rather than re-composited, so the
+# two sets stay identical in layout and captions.
+#
+# The aspect ratios differ very slightly (0.4603 vs 0.4622), so resize to cover
+# and centre-crop instead of forcing the size — squashing type by 0.4% is
+# subtle but it does show on the caption.
+# ---------------------------------------------------------------------------
+echo "Building 6.5\" set..."
+mkdir -p "$OUT65"
+for f in "${OUT}"/*.png; do
+  magick "$f" -resize "${W65}x${H65}^" -gravity center -extent "${W65}x${H65}" \
+    "${OUT65}/$(basename "$f")"
+done
 
 # ---------------------------------------------------------------------------
 # Web versions for cttech.io
