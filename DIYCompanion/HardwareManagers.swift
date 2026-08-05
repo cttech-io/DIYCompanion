@@ -467,13 +467,17 @@ class TorchManager: ObservableObject {
     func stop() { intensity = 0 }
 
     private func apply(_ level: Float) {
-        guard let device else { return }
-        try? device.lockForConfiguration()
+        // The lock must succeed before we touch the device *or* unlock it:
+        // an unbalanced unlockForConfiguration() is a programmer error in
+        // AVFoundation and can raise. `defer` also keeps the unlock paired if
+        // anything below starts throwing later.
+        guard let device, (try? device.lockForConfiguration()) != nil else { return }
+        defer { device.unlockForConfiguration() }
+
         if level > 0 {
             try? device.setTorchModeOn(level: max(0.001, min(level, 1.0)))
         } else {
             device.torchMode = .off
         }
-        device.unlockForConfiguration()
     }
 }

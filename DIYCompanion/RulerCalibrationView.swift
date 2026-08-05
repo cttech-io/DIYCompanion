@@ -7,13 +7,34 @@ import SwiftUI
 /// back — so the per-model density estimate no longer holds.
 struct RulerCalibrationView: View {
     /// ID-1 card long edge (85.60 mm), in inches.
-    private static let cardLongEdgeInches: CGFloat = 85.60 / 25.4
+    static let cardLongEdgeInches: CGFloat = 85.60 / 25.4
+
+    static let minPPI: CGFloat = 50
+
+    /// Slider ceiling for a given drawable middle region. The bar is drawn at
+    /// its true length, so the largest scale we can honestly show is whatever
+    /// card edge fits the space.
+    static func maxPPI(middleHeight: CGFloat) -> CGFloat {
+        (middleHeight - 24) / cardLongEdgeInches
+    }
+
+    /// Clamps a scale into what the current layout can actually display.
+    /// Everything — bar, slider and Save — goes through this, so the value
+    /// persisted is always the one the user lined their card up against.
+    static func clampedPPI(_ raw: CGFloat, middleHeight: CGFloat) -> CGFloat {
+        let ceiling = maxPPI(middleHeight: middleHeight)
+        guard ceiling > minPPI else { return max(raw, minPPI) }
+        return min(max(raw, minPPI), ceiling)
+    }
 
     let onSave: (CGFloat) -> Void
     let onReset: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var ppi: CGFloat
+    /// Mirrors the geometry so the Save action, which sits outside the
+    /// GeometryReader, can apply the same clamp the bar was drawn with.
+    @State private var middleHeight: CGFloat = 0
 
     init(pointsPerInch: CGFloat,
          onSave: @escaping (CGFloat) -> Void,
@@ -36,9 +57,9 @@ struct RulerCalibrationView: View {
                 // Ceiling comes straight from the drawable middle, so the bar
                 // (clamped × card edge) can never exceed its region and overlap
                 // the instruction or slider. middle ≥ 260 keeps max > min.
-                let minPPI: CGFloat = 50
-                let maxPPI = (middle - 24) / Self.cardLongEdgeInches
-                let clamped = min(max(ppi, minPPI), maxPPI)
+                let minPPI = Self.minPPI
+                let maxPPI = Self.maxPPI(middleHeight: middle)
+                let clamped = Self.clampedPPI(ppi, middleHeight: middle)
                 let barHeight = clamped * Self.cardLongEdgeInches
 
                 VStack(spacing: 0) {
@@ -82,6 +103,18 @@ struct RulerCalibrationView: View {
                     .frame(height: bottomReserve)
                 }
                 .padding(.horizontal)
+                // Pull the incoming scale into range straight away, and again if
+                // the region resizes (rotation, iPad multitasking) — otherwise
+                // the bar would show a clamped value while `ppi` held a
+                // different one, and Save would persist the latter.
+                .onAppear {
+                    middleHeight = middle
+                    ppi = Self.clampedPPI(ppi, middleHeight: middle)
+                }
+                .onChange(of: middle) { _, newMiddle in
+                    middleHeight = newMiddle
+                    ppi = Self.clampedPPI(ppi, middleHeight: newMiddle)
+                }
             }
             .navigationTitle("Calibrate Ruler")
             .navigationBarTitleDisplayMode(.inline)
@@ -91,7 +124,8 @@ struct RulerCalibrationView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        onSave(ppi)
+                        // Save exactly what the bar was drawn at.
+                        onSave(Self.clampedPPI(ppi, middleHeight: middleHeight))
                         dismiss()
                     }
                     .bold()

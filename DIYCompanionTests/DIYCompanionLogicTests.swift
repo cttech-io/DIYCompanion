@@ -45,6 +45,42 @@ final class DIYCompanionLogicTests: XCTestCase {
         XCTAssertEqual(RulerView.readout(points: 0, pointsPerInch: ppi, isMetric: true), "0.0 cm")
     }
 
+    // MARK: - Ruler calibration clamp (issue #1)
+
+    func testClampedPPI_rawAboveCeiling_returnsCeiling() {
+        // The bug: the bar and slider clamped, but Save persisted the raw value,
+        // so a scale the layout could never display got written to prefs.
+        let middle: CGFloat = 400
+        let ceiling = RulerCalibrationView.maxPPI(middleHeight: middle)
+        XCTAssertEqual(
+            RulerCalibrationView.clampedPPI(ceiling + 250, middleHeight: middle),
+            ceiling, accuracy: 0.001
+        )
+    }
+
+    func testClampedPPI_rawBelowFloor_returnsFloor() {
+        XCTAssertEqual(
+            RulerCalibrationView.clampedPPI(5, middleHeight: 600),
+            RulerCalibrationView.minPPI, accuracy: 0.001
+        )
+    }
+
+    func testClampedPPI_inRangeValueUnchanged() {
+        XCTAssertEqual(
+            RulerCalibrationView.clampedPPI(120, middleHeight: 600),
+            120, accuracy: 0.001
+        )
+    }
+
+    func testClampedPPI_degenerateHeight_staysAtOrAboveFloor() {
+        // A zero/for-tiny region makes the ceiling collapse below the floor;
+        // the clamp must not invert and return something nonsensical.
+        XCTAssertGreaterThanOrEqual(
+            RulerCalibrationView.clampedPPI(300, middleHeight: 0),
+            RulerCalibrationView.minPPI
+        )
+    }
+
     // MARK: - Noise tiers (part 2)
 
     func testNoiseTier_boundaries() {
