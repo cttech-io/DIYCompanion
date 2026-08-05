@@ -443,14 +443,26 @@ class NoiseManager: ObservableObject {
 
 class TorchManager: ObservableObject {
     @Published var intensity: Float = 0.0 {
-        didSet { apply(intensity) }
+        didSet {
+            if intensity > 0 { lastOnLevel = intensity }
+            apply(intensity)
+        }
     }
+
+    /// The last non-zero beam level, so toggling off and back on returns to the
+    /// level the user chose rather than jumping to full brightness. Recorded in
+    /// `didSet`, so it survives `stop()` (tab switch, backgrounding) too.
+    private var lastOnLevel: Float = 1.0
 
     // Cache the capture device once rather than looking it up on every tick.
     private lazy var device: AVCaptureDevice? = {
         let dev = AVCaptureDevice.default(for: .video)
         return (dev?.hasTorch == true) ? dev : nil
     }()
+
+    func toggle() {
+        intensity = intensity > 0 ? 0 : lastOnLevel
+    }
 
     func stop() { intensity = 0 }
 

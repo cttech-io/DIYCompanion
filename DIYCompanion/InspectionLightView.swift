@@ -52,7 +52,7 @@ struct InspectionLightView: View {
 
     private func torchButton(size: CGFloat) -> some View {
         Button {
-            manager.intensity = manager.intensity > 0 ? 0 : 1.0
+            manager.toggle()
         } label: {
             ZStack {
                 Circle()

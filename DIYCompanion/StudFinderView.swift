@@ -50,13 +50,21 @@ struct StudFinderView: View {
             DisclaimerSheet {
                 disclaimerAccepted = true
                 showDisclaimer = false
+                // Only now start sensing — see onAppear.
+                manager.start()
             }
             .interactiveDismissDisabled()
         }
         .keepsScreenAwake()
         .onAppear {
-            manager.start()
-            if !disclaimerAccepted { showDisclaimer = true }
+            // Don't sense behind the disclaimer: starting here would calibrate
+            // and fire escalation haptics while the user is still reading a
+            // liability notice they haven't accepted yet.
+            if disclaimerAccepted {
+                manager.start()
+            } else {
+                showDisclaimer = true
+            }
         }
         .onDisappear { manager.stop() }
     }
