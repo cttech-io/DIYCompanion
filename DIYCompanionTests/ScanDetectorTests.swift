@@ -324,12 +324,14 @@ final class ScanDetectorTests: XCTestCase {
 
     // MARK: - Recordings
 
-    /// Real sweep, iPhone 17 Pro, a plain screw under a hardback book, two passes.
+    /// Real sweep, iPhone 17 Pro, over a steel fork under a leather-bound
+    /// restaurant menu, two passes. Far more steel at a shallower depth than a
+    /// screw behind plasterboard, so it tests behaviour, not sensitivity.
     /// Truth from the raw sensor: still and rotating 0–3.3 s, passes peaking near
     /// 4.5 s and 9.5 s, back at the start point from ~11.5 s.
-    func testRecording_plainScrewUnderBook() throws {
+    func testRecording_forkUnderMenu() throws {
         let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("Fixtures/plain-screw-book-iphone17pro.csv")
+            .appendingPathComponent("Fixtures/fork-under-menu-iphone17pro.csv")
         let samples = ScanRecording.samples(fromCSV: try String(contentsOf: url, encoding: .utf8))
         XCTAssertEqual(samples.count, 1324)
         let t0 = samples[0].time

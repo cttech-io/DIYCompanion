@@ -33,10 +33,10 @@ struct ScanSample: Equatable {
 /// - The baseline follows slow drift, but only while the signal is quiet, so
 ///   holding the phone over a screw never fades back to "nothing here".
 /// - iOS's calibrated field can't be trusted mid-sweep: its background compass
-///   calibration mistakes a nearby screw for a change in the phone's own
-///   magnetism and "corrects" for it. On an iPhone 17 Pro recording it drifted
-///   up to 230 µT from the raw sensor and stayed 41 µT out after the phone
-///   returned to its start point. So iOS's correction (the phone's hard-iron
+///   calibration mistakes nearby metal for a change in the phone's own
+///   magnetism and "corrects" for it. Sweeping an iPhone 17 Pro over a fork,
+///   it drifted up to 230 µT from the raw sensor and stayed 41 µT out after
+///   the phone returned to its start point. So iOS's correction (the phone's hard-iron
 ///   offset, raw − calibrated) is captured once at calibration and frozen, and
 ///   from then on the detector reads the raw sensor minus that offset.
 struct ScanDetector {
