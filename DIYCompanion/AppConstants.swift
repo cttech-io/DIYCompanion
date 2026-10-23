@@ -6,7 +6,10 @@ enum Prefs {
     static let appearance = "appearance"
     static let useMetric = "useMetric"
     static let hapticsEnabled = "hapticsEnabled"
-    static let launchCount = "launchCount"
+    /// Completed tasks (level reached, measurement copied); drives when the
+    /// rating prompt is offered. See `ReviewGate`.
+    static let successCount = "successCount"
+    static let reviewPromptsShown = "reviewPromptsShown"
     static let studFinderDisclaimerAccepted = "studFinderDisclaimerAccepted"
 
     /// User-calibrated points-per-inch for the ruler. Zero means "not

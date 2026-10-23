@@ -39,3 +39,35 @@ extension View {
         modifier(KeepScreenAwakeModifier())
     }
 }
+
+// MARK: - Legible status colours
+
+extension Color {
+    /// Text colour for a status chip (coloured text on an 18% tint of the same
+    /// colour). The bright system tints work in dark mode but fall well under
+    /// the 4.5:1 text minimum in light mode — systemYellow on a yellow chip is
+    /// 1.3:1 — so light mode gets a darkened shade measured to clear 4.5:1.
+    static func statusText(_ dark: UIColor, light: UInt32) -> Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? dark : UIColor(rgb: light)
+        })
+    }
+
+    static let statusGreenText  = statusText(.systemGreen,  light: 0x1E7334)
+    static let statusOrangeText = statusText(.systemOrange, light: 0x945600)
+    static let statusRedText    = statusText(.systemRed,    light: 0xB22922)
+    static let statusYellowText = statusText(.systemYellow, light: 0x806600)
+
+    /// Label colour on a solid accent fill. The amber accent is light in both
+    /// appearances, so white on it is ~2:1; black is 10.6:1.
+    static let onAccent = Color.black
+}
+
+extension UIColor {
+    convenience init(rgb: UInt32) {
+        self.init(red: CGFloat((rgb >> 16) & 0xFF) / 255,
+                  green: CGFloat((rgb >> 8) & 0xFF) / 255,
+                  blue: CGFloat(rgb & 0xFF) / 255,
+                  alpha: 1)
+    }
+}

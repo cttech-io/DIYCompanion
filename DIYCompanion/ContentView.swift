@@ -11,13 +11,41 @@ func resolveFlashlightName(for languages: [String] = Locale.preferredLanguages) 
 // Resolves once at launch.
 let flashlightName: String = resolveFlashlightName()
 
-struct ContentView: View {
-    @AppStorage(Prefs.launchCount) private var launchCount: Int = 0
-    @Environment(\.requestReview) private var requestReview
+/// Decides when to ask for a rating. Asking at launch put the prompt over a
+/// tool the user had just opened to work with; instead we count completed
+/// tasks (the level settling green, a ruler measurement copied) and ask at a
+/// natural pause — the next tab switch after one — once enough have happened.
+enum ReviewGate {
+    /// Successes needed before each ask. Apple caps actual prompts at three a
+    /// year regardless, so two well-timed asks is plenty.
+    static let milestones = [3, 15]
 
-    // Per-process guard: `.task`/`onAppear` can re-fire on scene reconnection,
-    // and we must count each app launch exactly once.
-    private static var didHandleLaunch = false
+    static func shouldPrompt(successes: Int, promptsShown: Int) -> Bool {
+        promptsShown < milestones.count && successes >= milestones[promptsShown]
+    }
+
+    /// A success since the last tab switch, so the ask lands right after one.
+    private(set) static var hasPendingSuccess = false
+
+    static func recordSuccess(defaults: UserDefaults = .standard) {
+        defaults.set(defaults.integer(forKey: Prefs.successCount) + 1, forKey: Prefs.successCount)
+        hasPendingSuccess = true
+    }
+
+    /// Consumes the pending success; true when a prompt should be shown now.
+    static func takePromptDecision(defaults: UserDefaults = .standard) -> Bool {
+        guard hasPendingSuccess else { return false }
+        hasPendingSuccess = false
+        let shown = defaults.integer(forKey: Prefs.reviewPromptsShown)
+        guard shouldPrompt(successes: defaults.integer(forKey: Prefs.successCount),
+                           promptsShown: shown) else { return false }
+        defaults.set(shown + 1, forKey: Prefs.reviewPromptsShown)
+        return true
+    }
+}
+
+struct ContentView: View {
+    @Environment(\.requestReview) private var requestReview
 
     @State private var selectedTab: Int = ContentView.initialTab
 
@@ -66,19 +94,12 @@ struct ContentView: View {
                 }
                 .tag(4)
         }
-        .task { handleLaunch() }
-    }
-
-    private func handleLaunch() {
-        guard !Self.didHandleLaunch else { return }
-        Self.didHandleLaunch = true
-
-        launchCount += 1
-        // Ask at launch 5 (a few days in) and launch 15 (a couple of weeks in).
-        // Apple rate-limits actual prompts to 3 per year regardless of call frequency.
-        guard launchCount == 5 || launchCount == 15 else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            requestReview()
+        .onChange(of: selectedTab) { _, _ in
+            // Moving to another tool is the pause after a finished task.
+            guard ReviewGate.takePromptDecision() else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                requestReview()
+            }
         }
     }
 }

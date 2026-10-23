@@ -124,13 +124,13 @@ struct StudFinderView: View {
 
     private var hintText: some View {
         VStack(spacing: 8) {
-            Text("Sweep slowly along a wall. Spikes indicate studs, screws, or wiring.")
+            Text("Sweep slowly along a wall. Spikes show steel and iron — screws, nails and metal studs. It can't see wood, plastic or copper pipes, or most cables.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Label("Remove MagSafe accessories and calibrate before use.", systemImage: "exclamationmark.triangle.fill")
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color.statusOrangeText)
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal)
@@ -147,14 +147,14 @@ struct StudFinderView: View {
                     .foregroundStyle(.secondary)
                 Label("Remove MagSafe accessories", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.statusOrangeText)
             }
         } else {
             Text(statusLabel)
                 .font(.subheadline).bold()
                 .padding(.vertical, 10).padding(.horizontal, 20)
                 .background(threatColor.opacity(0.18), in: Capsule())
-                .foregroundStyle(threatColor)
+                .foregroundStyle(threatTextColor)
                 .animation(.easeInOut, value: manager.threat)
         }
     }
@@ -224,6 +224,15 @@ struct StudFinderView: View {
         }
     }
 
+    /// Chip text: `threatColor` itself fails contrast on its own tint in light mode.
+    private var threatTextColor: Color {
+        switch manager.threat {
+        case .safe:    return .statusGreenText
+        case .caution: return .statusOrangeText
+        case .danger:  return .statusRedText
+        }
+    }
+
     private var statusLabel: String {
         switch manager.threat {
         case .safe:    return "No Metal Detected"
@@ -262,7 +271,7 @@ private struct DisclaimerSheet: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.onAccent)
             }
         }
         .padding(28)

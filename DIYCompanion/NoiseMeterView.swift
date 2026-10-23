@@ -111,7 +111,7 @@ struct NoiseMeterView: View {
             .font(.subheadline).bold()
             .padding(.vertical, 10).padding(.horizontal, 20)
             .background(tierColor.opacity(0.18), in: Capsule())
-            .foregroundStyle(tierColor)
+            .foregroundStyle(tierTextColor)
             .animation(.easeInOut, value: manager.tier)
     }
 
@@ -139,6 +139,16 @@ struct NoiseMeterView: View {
         case .moderate:  return .yellow
         case .loud:      return .orange
         case .dangerous: return .red
+        }
+    }
+
+    /// Chip text: `tierColor` itself fails contrast on its own tint in light mode.
+    private var tierTextColor: Color {
+        switch manager.tier {
+        case .quiet:     return .statusGreenText
+        case .moderate:  return .statusYellowText
+        case .loud:      return .statusOrangeText
+        case .dangerous: return .statusRedText
         }
     }
 

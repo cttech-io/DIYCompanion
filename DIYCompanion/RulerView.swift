@@ -5,6 +5,7 @@ struct RulerView: View {
     @AppStorage(Prefs.useMetric) private var isMetric: Bool = true
     @AppStorage(Prefs.rulerCalibratedPPI) private var calibratedPPI: Double = 0
     @Environment(\.verticalSizeClass) private var vSize
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showSettings = false
     @State private var showCalibration = false
     @State private var markerA: CGFloat? = RulerView.simulatorSeed(0.26)
@@ -205,6 +206,7 @@ struct RulerView: View {
         else if let a = markerA { text = readout(a) }
         else { return }
         UIPasteboard.general.string = text
+        ReviewGate.recordSuccess()
         withAnimation(.easeInOut) { didCopy = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             withAnimation(.easeInOut) { didCopy = false }
@@ -283,9 +285,9 @@ struct RulerView: View {
             Spacer(minLength: 8)
             Text(calibratedPPI > 0 ? "Recalibrate" : "Calibrate")
                 .font(.caption).bold()
-                .foregroundStyle(.white)
+                .foregroundStyle(calibratedPPI > 0 ? Color.primary : Color.onAccent)
                 .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(calibratedPPI > 0 ? Color.secondary : Color.accentColor, in: Capsule())
+                .background(calibratedPPI > 0 ? Color(.systemFill) : Color.accentColor, in: Capsule())
         }
         .padding(12)
         .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
@@ -343,8 +345,10 @@ struct RulerView: View {
                      color: .orange)
             }
 
-            // Layer 3: measurement card — rendered above lines so they don't overlap it
-            VStack {
+            // Layer 3: measurement card — rendered above lines so they don't overlap it.
+            // Trailing-aligned so a wider (large-text) card grows away from the
+            // marker chips beside the strip rather than over them.
+            VStack(alignment: .trailing) {
                 Spacer()
                 Group {
                     if markerA != nil || markerB != nil {
@@ -361,6 +365,7 @@ struct RulerView: View {
                 .animation(.easeInOut, value: markerA == nil && markerB == nil)
                 .padding(.bottom, 90)
             }
+            .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.leading, rulerW + 16)
             .padding(.trailing, 16)
 
@@ -499,6 +504,10 @@ struct RulerView: View {
     private func chip(_ text: String, at point: CGPoint, color: Color) -> some View {
         Text(text)
             .font(.caption2).bold().monospacedDigit()
+            // Capped: a chip sits on its marker line beside the tick labels,
+            // and at accessibility sizes it would cover the ticks it labels.
+            // The full-size readout is in the measurement card.
+            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
             .padding(.horizontal, 6).padding(.vertical, 3)
             .background(color, in: Capsule())
             .foregroundStyle(.white)
@@ -535,28 +544,46 @@ struct RulerView: View {
                 }
             }
             Divider()
-            HStack {
-                Button { copyMeasurement() } label: {
-                    Label(
-                        didCopy ? "Copied" : "Copy",
-                        systemImage: didCopy ? "checkmark" : "doc.on.doc"
-                    )
-                    .font(.caption).bold()
+            // Side by side when they fit; stacked at large text sizes, where a
+            // fixed-width row broke "Copy" and "Clear" one letter per line.
+            ViewThatFits(in: .horizontal) {
+                // fixedSize: measure at full label width, or the row "fits" by
+                // wrapping the labels — the very breakage this guards against.
+                HStack {
+                    copyButton.fixedSize()
+                    Spacer()
+                    clearButton.fixedSize()
                 }
-                .tint(didCopy ? .green : .accentColor)
-                .animation(.easeInOut, value: didCopy)
-                Spacer()
-                Button {
-                    clearMarkers()
-                } label: {
-                    Text("Clear").font(.caption).bold()
+                VStack(alignment: .leading, spacing: 8) {
+                    copyButton
+                    clearButton
                 }
-                .tint(.red)
             }
         }
         .padding(14)
         .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
-        .frame(maxWidth: 180)
+        .frame(maxWidth: typeSize.isAccessibilitySize ? 220 : 180)
+    }
+
+    private var copyButton: some View {
+        Button { copyMeasurement() } label: {
+            Label(
+                didCopy ? "Copied" : "Copy",
+                systemImage: didCopy ? "checkmark" : "doc.on.doc"
+            )
+            .font(.caption).bold()
+        }
+        .tint(didCopy ? Color.statusGreenText : .accentColor)
+        .animation(.easeInOut, value: didCopy)
+    }
+
+    private var clearButton: some View {
+        Button {
+            clearMarkers()
+        } label: {
+            Text("Clear").font(.caption).bold()
+        }
+        .tint(Color.statusRedText)
     }
 
     // MARK: - Unit picker
@@ -603,9 +630,7 @@ private struct RulerStrip: View {
         )
         .background(Color(.tertiarySystemBackground))
         .accessibilityLabel("Ruler")
-        .accessibilityHint(isHorizontal
-            ? "Place object flush against the top of the phone to measure"
-            : "Place object flush against the left side of the phone to measure")
+        .accessibilityHint("Lay the object on the screen along the ruler, with one end at zero")
     }
 
     private func drawMetric(ctx: GraphicsContext, size: CGSize) {
@@ -618,7 +643,7 @@ private struct RulerStrip: View {
             let isMid  = mm % 5  == 0
             let length: CGFloat = isCm ? 38 : isMid ? 24 : 14
             tick(ctx: ctx, pos: pos, length: length)
-            if isCm && mm > 0 {
+            if isCm {
                 label(ctx: ctx, text: "\(mm / 10)", pos: pos, tickLength: length)
             }
         }
@@ -636,8 +661,8 @@ private struct RulerStrip: View {
             let isEighth = i % 2  == 0
             let length: CGFloat = isIn ? 38 : isHalf ? 28 : isQtr ? 20 : isEighth ? 13 : 9
             tick(ctx: ctx, pos: pos, length: length)
-            if isIn && i > 0 {
-                label(ctx: ctx, text: "\(i / 16)\"", pos: pos, tickLength: length)
+            if isIn {
+                label(ctx: ctx, text: i == 0 ? "0" : "\(i / 16)\"", pos: pos, tickLength: length)
             }
         }
     }
@@ -658,10 +683,15 @@ private struct RulerStrip: View {
         let resolved = ctx.resolve(
             Text(text).font(.system(size: 11, weight: .medium, design: .rounded))
         )
+        // Zero sits on the strip's edge; anchor its label inside the strip
+        // rather than centred on the tick, where half of it would be clipped.
+        let atZero = pos == 0
         if isHorizontal {
-            ctx.draw(resolved, at: .init(x: pos, y: tickLength + 6), anchor: .top)
+            ctx.draw(resolved, at: .init(x: pos + (atZero ? 2 : 0), y: tickLength + 6),
+                     anchor: atZero ? .topLeading : .top)
         } else {
-            ctx.draw(resolved, at: .init(x: tickLength + 5, y: pos), anchor: .leading)
+            ctx.draw(resolved, at: .init(x: tickLength + 5, y: pos + (atZero ? 2 : 0)),
+                     anchor: atZero ? .topLeading : .leading)
         }
     }
 }

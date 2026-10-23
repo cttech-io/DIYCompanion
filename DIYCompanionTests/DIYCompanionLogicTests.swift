@@ -1,6 +1,7 @@
 import XCTest
 import CoreGraphics
 import UIKit
+import SwiftUI
 @testable import DIYCompanion
 
 // Pure-logic tests for the classification/formatting helpers extracted from the
@@ -166,5 +167,91 @@ final class DIYCompanionLogicTests: XCTestCase {
             LevelManager.plumbAngleDegrees(gx: -sqrt(3) / 2, gy: -0.5, orientation: .landscapeLeft),
             30, accuracy: 0.01
         )
+    }
+
+    // MARK: - Level hysteresis (1.0.2)
+
+    func testLevelState_hysteresisHoldsThroughNoiseNearThreshold() {
+        // Entering needs < 0.5°; once level, only > 0.8° drops it.
+        XCTAssertFalse(LevelManager.levelState(wasLevel: false, deviation: 0.6))
+        XCTAssertTrue(LevelManager.levelState(wasLevel: false, deviation: 0.4))
+        XCTAssertTrue(LevelManager.levelState(wasLevel: true, deviation: 0.6))
+        XCTAssertFalse(LevelManager.levelState(wasLevel: true, deviation: 0.9))
+
+        // A noisy reading wobbling around 0.5° must not toggle the state
+        // (which flickered the ring and re-fired the haptic every crossing).
+        var level = false
+        var transitions = 0
+        for deviation in [0.45, 0.55, 0.48, 0.62, 0.51, 0.70, 0.49, 0.58] {
+            let next = LevelManager.levelState(wasLevel: level, deviation: deviation)
+            if next != level { transitions += 1 }
+            level = next
+        }
+        XCTAssertEqual(transitions, 1)
+    }
+
+    // MARK: - Degree formatting (1.0.2)
+
+    func testFormatDegrees_normalisesNegativeZero() {
+        XCTAssertEqual(formatDegrees(-0.04), "0.0°")
+        XCTAssertEqual(formatDegrees(0.04), "0.0°")
+        XCTAssertEqual(formatDegrees(-0.05), "-0.1°")
+        XCTAssertEqual(formatDegrees(12.345), "12.3°")
+    }
+
+    // MARK: - Review prompt gate (1.0.2)
+
+    func testReviewGate_promptsOnlyAtMilestones() {
+        XCTAssertFalse(ReviewGate.shouldPrompt(successes: 2, promptsShown: 0))
+        XCTAssertTrue(ReviewGate.shouldPrompt(successes: 3, promptsShown: 0))
+        XCTAssertFalse(ReviewGate.shouldPrompt(successes: 10, promptsShown: 1))
+        XCTAssertTrue(ReviewGate.shouldPrompt(successes: 15, promptsShown: 1))
+        XCTAssertFalse(ReviewGate.shouldPrompt(successes: 500, promptsShown: 2))
+    }
+
+    func testReviewGate_asksOnlyAfterAPendingSuccess() {
+        let defaults = UserDefaults(suiteName: #function)!
+        defaults.removePersistentDomain(forName: #function)
+        defer { defaults.removePersistentDomain(forName: #function) }
+
+        _ = ReviewGate.takePromptDecision(defaults: defaults)   // clear any pending state
+        ReviewGate.recordSuccess(defaults: defaults)
+        ReviewGate.recordSuccess(defaults: defaults)
+        XCTAssertFalse(ReviewGate.takePromptDecision(defaults: defaults))   // only 2
+        ReviewGate.recordSuccess(defaults: defaults)
+        XCTAssertTrue(ReviewGate.takePromptDecision(defaults: defaults))    // 3rd, at a tab switch
+        XCTAssertFalse(ReviewGate.takePromptDecision(defaults: defaults))   // consumed
+    }
+
+    // MARK: - Status colour contrast (1.0.2)
+
+    func testStatusTextColours_meetTextContrastOnTheirLightModeChips() {
+        func luminance(_ c: UIColor) -> CGFloat {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            c.getRed(&r, green: &g, blue: &b, alpha: &a)
+            func lin(_ v: CGFloat) -> CGFloat { v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+            return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+        }
+        func blend(_ fg: UIColor, over bg: UIColor, alpha: CGFloat) -> UIColor {
+            var fr: CGFloat = 0, fgG: CGFloat = 0, fb: CGFloat = 0, fa: CGFloat = 0
+            var br: CGFloat = 0, bgG: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+            fg.getRed(&fr, green: &fgG, blue: &fb, alpha: &fa)
+            bg.getRed(&br, green: &bgG, blue: &bb, alpha: &ba)
+            return UIColor(red: fr * alpha + br * (1 - alpha), green: fgG * alpha + bgG * (1 - alpha),
+                           blue: fb * alpha + bb * (1 - alpha), alpha: 1)
+        }
+        let light = UITraitCollection(userInterfaceStyle: .light)
+        let page = UIColor.secondarySystemBackground.resolvedColor(with: light)
+        let pairs: [(Color, UIColor)] = [
+            (.statusGreenText, .systemGreen), (.statusOrangeText, .systemOrange),
+            (.statusRedText, .systemRed), (.statusYellowText, .systemYellow),
+        ]
+        for (text, tint) in pairs {
+            let fg = UIColor(text).resolvedColor(with: light)
+            let chip = blend(tint.resolvedColor(with: light), over: page, alpha: 0.18)
+            let (l1, l2) = (luminance(fg), luminance(chip))
+            let ratio = (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+            XCTAssertGreaterThanOrEqual(ratio, 4.5, "\(tint) chip text is \(ratio):1")
+        }
     }
 }

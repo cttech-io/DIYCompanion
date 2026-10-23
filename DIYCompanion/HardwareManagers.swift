@@ -21,6 +21,20 @@ class LevelManager: ObservableObject {
     private let filter: Double = 0.15
     private var orientationToken: NSObjectProtocol?
 
+    // Smoothed gravity, so the level test reads the same signal the bubble shows.
+    private var gxFiltered: Double = 0.0
+    private var gyFiltered: Double = 0.0
+
+    /// Hysteresis band, in degrees: become level inside `enterLevel`, stop
+    /// being level only beyond `exitLevel`. A single threshold let sensor noise
+    /// toggle the state near level — flickering the ring and re-firing the haptic.
+    static let enterLevel = 0.5
+    static let exitLevel  = 0.8
+
+    static func levelState(wasLevel: Bool, deviation: Double) -> Bool {
+        wasLevel ? deviation < exitLevel : deviation < enterLevel
+    }
+
     init() {
         haptic.prepare()
     }
@@ -43,9 +57,7 @@ class LevelManager: ObservableObject {
         // that settles to perfectly level (green) so screenshots, App Previews,
         // and SwiftUI previews show the real UI. Compiled out of device builds.
         startSimulatedMotion()
-        return
-        #endif
-
+        #else
         guard motionManager.isDeviceMotionAvailable else { return }
         motionManager.deviceMotionUpdateInterval = 1.0 / 60.0
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
@@ -55,32 +67,33 @@ class LevelManager: ObservableObject {
             self.pitch = p * self.filter + self.pitch * (1 - self.filter)
             self.roll  = r * self.filter + self.roll  * (1 - self.filter)
 
-            // Gravity-based isLevel: works for both flat (on table) and vertical (against wall).
-            // When mostly flat (|gz| > 0.4), both lateral axes must be near zero.
-            // When vertical, only the axis perpendicular to gravity matters.
-            let gx = data.gravity.x
-            let gy = data.gravity.y
+            // Gravity-based level test: works both flat (on a table) and vertical
+            // (against a wall). Flat (|gz| > 0.4): both lateral axes must be near
+            // zero. Vertical: only the axis perpendicular to gravity matters.
+            // Smoothed with the same filter as the readouts, so the ring goes
+            // green exactly when the bubble looks centred.
             let gz = data.gravity.z
-            let threshold = 0.0087  // sin(0.5°)
+            self.gxFiltered = data.gravity.x * self.filter + self.gxFiltered * (1 - self.filter)
+            self.gyFiltered = data.gravity.y * self.filter + self.gyFiltered * (1 - self.filter)
             let plumb = abs(gz) <= 0.4
             self.isPlumbMode = plumb
 
-            let level: Bool
+            let deviation: Double   // degrees from level (flat) or plumb (vertical)
             if !plumb {
-                level = abs(gx) < threshold && abs(gy) < threshold
+                let toDegrees = 180 / Double.pi
+                deviation = max(abs(asin(max(-1, min(self.gxFiltered, 1)))),
+                                abs(asin(max(-1, min(self.gyFiltered, 1))))) * toDegrees
             } else {
-                // Drive both the readout and the level state from the SAME angle,
-                // so the bubble is centred exactly when it reports plumb.
-                let angle = Self.plumbAngleDegrees(gx: gx, gy: gy, orientation: self.deviceOrientation)
+                let angle = Self.plumbAngleDegrees(gx: data.gravity.x, gy: data.gravity.y,
+                                                   orientation: self.deviceOrientation)
                 self.plumbAngle = angle * self.filter + self.plumbAngle * (1 - self.filter)
-                level = abs(angle) < 0.5   // degrees
+                deviation = abs(self.plumbAngle)
             }
+            let level = Self.levelState(wasLevel: self.isLevel, deviation: deviation)
 
             // Keep the haptic engine warm as we approach level; a generator that
             // has gone idle (~a couple of seconds) can silently drop its impact.
-            let nearLevel = plumb ? abs(self.plumbAngle) < 3.0
-                                  : (abs(gx) < 0.05 && abs(gy) < 0.05)
-            if nearLevel && !self.isLevel { self.haptic.prepare() }
+            if deviation < 3.0 && !self.isLevel { self.haptic.prepare() }
 
             if level != self.isLevel {
                 self.isLevel = level
@@ -91,6 +104,7 @@ class LevelManager: ObservableObject {
                 }
             }
         }
+        #endif
     }
 
     /// Signed angle of the phone from true vertical, in degrees, derived from
@@ -114,11 +128,13 @@ class LevelManager: ObservableObject {
         simGeneration &+= 1
         #endif
         motionManager.stopDeviceMotionUpdates()
+        // Only end orientation notifications we began: stop() runs from both
+        // onDisappear and deinit, and begin/end calls must stay balanced.
         if let token = orientationToken {
             NotificationCenter.default.removeObserver(token)
             orientationToken = nil
+            UIDevice.current.endGeneratingDeviceOrientationNotifications()
         }
-        UIDevice.current.endGeneratingDeviceOrientationNotifications()
     }
 
     #if targetEnvironment(simulator)
@@ -143,7 +159,7 @@ class LevelManager: ObservableObject {
     }
     #endif
 
-    deinit { motionManager.stopDeviceMotionUpdates() }
+    deinit { stop() }
 }
 
 class MagnetometerManager: ObservableObject {
@@ -178,8 +194,7 @@ class MagnetometerManager: ObservableObject {
         // realistic sweep that peaks then settles on a clear detection, so the
         // scanner shows its real gauge UI. Compiled out of device builds.
         startSimulatedField()
-        return
-        #endif
+        #else
         guard motionManager.isDeviceMotionAvailable else { return }
         motionManager.deviceMotionUpdateInterval = 1.0 / 30.0
         motionManager.startDeviceMotionUpdates(using: .xArbitraryCorrectedZVertical, to: .main) { [weak self] data, _ in
@@ -222,6 +237,7 @@ class MagnetometerManager: ObservableObject {
                 }
             }
         }
+        #endif
     }
 
     /// Thresholds are in deviation µT; sensitivity scales them down/up.
@@ -282,7 +298,7 @@ class MagnetometerManager: ObservableObject {
     }
     #endif
 
-    deinit { motionManager.stopDeviceMotionUpdates() }
+    deinit { stop() }
 }
 
 class NoiseManager: ObservableObject {
@@ -297,6 +313,15 @@ class NoiseManager: ObservableObject {
     private var timer: Timer?
     private var interruptionObserver: NSObjectProtocol?
     private var deadTicks = 0   // consecutive ticks reading the dead-recorder floor
+
+    /// Session activation and `record()` are synchronous IPC to the media
+    /// server and can block for seconds when it's busy, so they run here
+    /// rather than on the main thread (where a stall froze the whole UI).
+    /// Serial, so a stop queued after a start always runs after it.
+    private let audioQueue = DispatchQueue(label: "io.cttech.diycompanion.noise", qos: .userInitiated)
+    /// Bumped by every start and stop; a start that finishes after a newer
+    /// request has superseded it is discarded instead of published.
+    private var generation = 0
 
     func start() {
         registerInterruptionObserver()
@@ -325,11 +350,15 @@ class NoiseManager: ObservableObject {
         guard recorder != nil || permissionDenied else { return }
         switch AVAudioApplication.shared.recordPermission {
         case .granted:
-            if permissionDenied { permissionDenied = false }
-            // Always rebuild: an interrupted AVAudioRecorder keeps reporting
-            // isRecording == true while producing only the −160 dBFS floor, so
-            // we can't trust that flag to decide whether a restart is needed.
-            beginRecording()
+            // Only a recovering denial needs a start here. A live recorder is
+            // left alone: rebuilding it unconditionally restarted the meter on
+            // every launch (onAppear starts it, then scenePhase turns .active),
+            // and one an interruption left dead is caught by tick()'s
+            // floor-reading watchdog within a quarter of a second anyway.
+            if permissionDenied {
+                permissionDenied = false
+                beginRecording()
+            }
         case .denied:
             permissionDenied = true
         case .undetermined:
@@ -363,27 +392,56 @@ class NoiseManager: ObservableObject {
         // Tear down any prior recorder/timer so repeated calls (interruption
         // end, foreground restart) don't stack.
         timer?.invalidate(); timer = nil
-        recorder?.stop(); recorder = nil
+        let previous = recorder
+        recorder = nil
+        generation &+= 1
+        let gen = generation
+        let queue = audioQueue
 
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.record, mode: .measurement)
-        try? session.setActive(true)
-        // Metering works without persisting audio; write to /dev/null so nothing
-        // is ever stored (no unbounded temp file — and a cleaner privacy story).
-        let url = URL(fileURLWithPath: "/dev/null")
-        let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatAppleLossless),
-            AVSampleRateKey: 44100.0,
-            AVNumberOfChannelsKey: 1
-        ]
-        guard let rec = try? AVAudioRecorder(url: url, settings: settings) else { return }
-        rec.isMeteringEnabled = true
-        rec.record()
-        recorder = rec
-        deadTicks = 0
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 20.0, repeats: true) { [weak self] _ in
-            self?.tick()
+        queue.async { [weak self] in
+            previous?.stop()
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.record, mode: .measurement)
+            try? session.setActive(true)
+            // Metering works without persisting audio; write to /dev/null so nothing
+            // is ever stored (no unbounded temp file — and a cleaner privacy story).
+            let url = URL(fileURLWithPath: "/dev/null")
+            let settings: [String: Any] = [
+                AVFormatIDKey: Int(kAudioFormatAppleLossless),
+                AVSampleRateKey: 44100.0,
+                AVNumberOfChannelsKey: 1
+            ]
+            guard let rec = try? AVAudioRecorder(url: url, settings: settings) else { return }
+            rec.isMeteringEnabled = true
+            rec.record()
+
+            DispatchQueue.main.async {
+                guard let self, gen == self.generation else {
+                    // Superseded by a stop (tab switch) while starting: release
+                    // the mic and the session rather than publish a stale meter.
+                    queue.async { Self.tearDown(rec) }
+                    return
+                }
+                self.recorder = rec
+                self.deadTicks = 0
+                self.timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 20.0, repeats: true) { [weak self] _ in
+                    self?.tick()
+                }
+            }
         }
+    }
+
+    /// Stops a recorder and hands the audio session back. Blocking, so call it
+    /// on `audioQueue` (or from deinit, where nothing is left to freeze).
+    private static func tearDown(_ rec: AVAudioRecorder?) {
+        rec?.stop()
+        let session = AVAudioSession.sharedInstance()
+        try? session.setActive(false, options: .notifyOthersOnDeactivation)
+        // A `.record` category silences UIFeedbackGenerator haptics app-wide, and
+        // the category persists after deactivation — which was killing the Spirit
+        // Level's haptic once the Noise Meter had been opened. Reset to a
+        // haptic-friendly category on the way out.
+        try? session.setCategory(.ambient)
     }
 
     private func tick() {
@@ -424,18 +482,14 @@ class NoiseManager: ObservableObject {
 
     func stop() {
         timer?.invalidate(); timer = nil
-        recorder?.stop(); recorder = nil
+        generation &+= 1   // abandon any start still in flight
+        let previous = recorder
+        recorder = nil
         if let token = interruptionObserver {
             NotificationCenter.default.removeObserver(token)
             interruptionObserver = nil
         }
-        let session = AVAudioSession.sharedInstance()
-        try? session.setActive(false, options: .notifyOthersOnDeactivation)
-        // A `.record` category silences UIFeedbackGenerator haptics app-wide, and
-        // the category persists after deactivation — which was killing the Spirit
-        // Level's haptic once the Noise Meter had been opened. Reset to a
-        // haptic-friendly category on the way out.
-        try? session.setCategory(.ambient)
+        audioQueue.async { Self.tearDown(previous) }
     }
 
     deinit { stop() }

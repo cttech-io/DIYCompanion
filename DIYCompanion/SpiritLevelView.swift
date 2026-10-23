@@ -3,6 +3,8 @@ import SwiftUI
 struct SpiritLevelView: View {
     @StateObject private var manager = LevelManager()
     @Environment(\.verticalSizeClass) private var vSize
+    /// One review-gate success per visit, however often the level wobbles in and out.
+    @State private var recordedSuccess = false
 
     var body: some View {
         NavigationStack {
@@ -19,20 +21,29 @@ struct SpiritLevelView: View {
                     }
                     .padding(.horizontal, 32)
                 } else {
-                    VStack(spacing: 32) {
-                        Text(manager.isPlumbMode
-                            ? "Hold the phone upright against a wall or frame.\nHaptics fire when perfectly plumb."
-                            : "Place your phone flat against a surface.\nHaptics fire when perfectly level.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                            .animation(.easeInOut, value: manager.isPlumbMode)
+                    // Scrolls only when it must (large accessibility text sizes),
+                    // otherwise stays centred like the other tools.
+                    GeometryReader { proxy in
+                        ScrollView {
+                            VStack(spacing: 32) {
+                                Text(manager.isPlumbMode
+                                    ? "Hold the phone upright against a wall or frame.\nYou'll feel a tap when it's plumb."
+                                    : "Place your phone flat on a surface.\nYou'll feel a tap when it's level.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .padding(.horizontal)
+                                    .animation(.easeInOut, value: manager.isPlumbMode)
 
-                        levelDisplay(size: 280)
-                        readouts
+                                levelDisplay(size: 280)
+                                readouts
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
                     }
-                    .padding()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -42,8 +53,16 @@ struct SpiritLevelView: View {
             .withSettingsToolbar()
         }
         .keepsScreenAwake()
-        .onAppear { manager.start() }
+        .onAppear {
+            recordedSuccess = false
+            manager.start()
+        }
         .onDisappear { manager.stop() }
+        .onChange(of: manager.isLevel) { _, level in
+            guard level, !recordedSuccess else { return }
+            recordedSuccess = true
+            ReviewGate.recordSuccess()
+        }
     }
 
     // Switch presentation based on how the phone is held: a flat bubble level on
@@ -144,7 +163,7 @@ private struct BubbleLevel: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Spirit level")
-        .accessibilityValue("Pitch \(String(format: "%.1f", pitch))°, roll \(String(format: "%.1f", roll))°. \(isLevel ? "Level" : "Not level").")
+        .accessibilityValue("Pitch \(formatDegrees(pitch)), roll \(formatDegrees(roll)). \(isLevel ? "Level" : "Not level").")
         .accessibilityAddTraits(.updatesFrequently)
     }
 }
@@ -185,7 +204,7 @@ private struct PlumbTube: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Plumb level")
-        .accessibilityValue("\(String(format: "%.1f", abs(angle)))° from vertical. \(isLevel ? "Plumb" : "Not plumb").")
+        .accessibilityValue("\(formatDegrees(abs(angle))) from vertical. \(isLevel ? "Plumb" : "Not plumb").")
         .accessibilityAddTraits(.updatesFrequently)
     }
 }
@@ -198,8 +217,15 @@ private struct AngleReadout: View {
         VStack(spacing: 4) {
             Text(label)
                 .font(.caption2).bold().foregroundStyle(.secondary)
-            Text(String(format: "%.1f°", degrees))
+            Text(formatDegrees(degrees))
                 .font(.title3).bold().monospacedDigit()
         }
     }
+}
+
+/// One-decimal degrees with negative zero normalised: `%.1f` renders a reading
+/// of −0.04 as "-0.0°", which flickers against "0.0°" on a phone at rest.
+func formatDegrees(_ degrees: Double) -> String {
+    let rounded = (degrees * 10).rounded() / 10
+    return String(format: "%.1f°", rounded == 0 ? 0 : rounded)
 }
