@@ -52,6 +52,7 @@ struct SettingsView: View {
                     appearanceCard
                     measurementCard
                     feedbackCard
+                    if ScannerLab.isAvailable { testingCard }
                     aboutCard
                 }
                 .padding()
@@ -116,6 +117,25 @@ struct SettingsView: View {
                 }
             }
             .tint(.accentColor)
+        }
+    }
+
+    /// Debug and TestFlight builds only — see `ScannerLab.isAvailable`.
+    private var testingCard: some View {
+        card("Testing") {
+            NavigationLink {
+                ScannerLabView()
+            } label: {
+                HStack {
+                    Text("Scanner Lab")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
         }
     }
 

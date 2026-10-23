@@ -22,6 +22,9 @@
 		A10001000000000000000041 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000040 /* AppConstants.swift */; };
 		A10001000000000000000043 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000042 /* ViewModifiers.swift */; };
 		A10001000000000000000052 /* DIYCompanionLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000051 /* DIYCompanionLogicTests.swift */; };
+		A10001000000000000000071 /* ScanDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000070 /* ScanDetector.swift */; };
+		A10001000000000000000073 /* ScannerLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000072 /* ScannerLab.swift */; };
+		A10001000000000000000075 /* ScanDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001000000000000000074 /* ScanDetectorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +56,9 @@
 		A10001000000000000000042 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
 		A10001000000000000000051 /* DIYCompanionLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DIYCompanionLogicTests.swift; sourceTree = "<group>"; };
 		A10001000000000000000053 /* DIYCompanionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DIYCompanionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10001000000000000000070 /* ScanDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanDetector.swift; sourceTree = "<group>"; };
+		A10001000000000000000072 /* ScannerLab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerLab.swift; sourceTree = "<group>"; };
+		A10001000000000000000074 /* ScanDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanDetectorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +104,8 @@
 				A10001000000000000000040 /* AppConstants.swift */,
 				A10001000000000000000042 /* ViewModifiers.swift */,
 				A10001000000000000000012 /* ContentView.swift */,
+				A10001000000000000000070 /* ScanDetector.swift */,
+				A10001000000000000000072 /* ScannerLab.swift */,
 				A10001000000000000000014 /* HardwareManagers.swift */,
 				A10001000000000000000016 /* SpiritLevelView.swift */,
 				A10001000000000000000018 /* StudFinderView.swift */,
@@ -124,6 +132,7 @@
 		A10001000000000000000050 /* DIYCompanionTests */ = {
 			isa = PBXGroup;
 			children = (
+				A10001000000000000000074 /* ScanDetectorTests.swift */,
 				A10001000000000000000051 /* DIYCompanionLogicTests.swift */,
 			);
 			path = DIYCompanionTests;
@@ -233,6 +242,8 @@
 				A10001000000000000000041 /* AppConstants.swift in Sources */,
 				A10001000000000000000043 /* ViewModifiers.swift in Sources */,
 				A10001000000000000000013 /* ContentView.swift in Sources */,
+				A10001000000000000000071 /* ScanDetector.swift in Sources */,
+				A10001000000000000000073 /* ScannerLab.swift in Sources */,
 				A10001000000000000000015 /* HardwareManagers.swift in Sources */,
 				A10001000000000000000017 /* SpiritLevelView.swift in Sources */,
 				A10001000000000000000019 /* StudFinderView.swift in Sources */,
@@ -248,6 +259,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10001000000000000000075 /* ScanDetectorTests.swift in Sources */,
 				A10001000000000000000052 /* DIYCompanionLogicTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -406,7 +418,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = io.cttech.diycompanion;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -443,7 +455,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = io.cttech.diycompanion;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -467,7 +479,7 @@
 				DEVELOPMENT_TEAM = 5RXS6MDFW8;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = io.cttech.diycompanion.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -492,7 +504,7 @@
 				DEVELOPMENT_TEAM = 5RXS6MDFW8;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = io.cttech.diycompanion.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
