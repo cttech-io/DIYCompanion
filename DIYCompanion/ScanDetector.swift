@@ -9,7 +9,7 @@ struct ScanSample: Equatable {
     /// iOS-calibrated field in the device frame, µT (`CMDeviceMotion.magneticField`).
     var field: SIMD3<Double>
     /// Uncalibrated magnetometer in the device frame, µT (`CMMagnetometerData`).
-    /// Optional: only used to tell iOS bias re-estimates apart from real metal.
+    /// Preferred source once calibrated; see `ScanDetector`.
     var rawField: SIMD3<Double>?
     /// Bias-corrected gyro in the device frame, rad/s.
     var rotationRate: SIMD3<Double>
@@ -32,9 +32,13 @@ struct ScanSample: Equatable {
 ///   that would partly "correct away" the very metal we're looking for.)
 /// - The baseline follows slow drift, but only while the signal is quiet, so
 ///   holding the phone over a screw never fades back to "nothing here".
-/// - When the raw magnetometer is available, a step in the calibrated field
-///   that the raw sensor didn't see is iOS updating its bias estimate, not
-///   metal, and is subtracted out.
+/// - iOS's calibrated field can't be trusted mid-sweep: its background compass
+///   calibration mistakes a nearby screw for a change in the phone's own
+///   magnetism and "corrects" for it. On an iPhone 17 Pro recording it drifted
+///   up to 230 µT from the raw sensor and stayed 41 µT out after the phone
+///   returned to its start point. So iOS's correction (the phone's hard-iron
+///   offset, raw − calibrated) is captured once at calibration and frozen, and
+///   from then on the detector reads the raw sensor minus that offset.
 struct ScanDetector {
 
     struct Config {
@@ -60,8 +64,6 @@ struct ScanDetector {
         /// Earth's field is ~25–65 µT anywhere on the planet. A baseline outside
         /// this means a magnet (MagSafe, a case) or metal nearby at calibration.
         var plausibleBaseline: ClosedRange<Double> = 20...70
-        /// Calibrated-vs-raw step disagreement treated as an iOS bias update, µT.
-        var biasJumpThreshold = 3.0
         /// Beyond this rotation since calibration, residual bias errors start to
         /// show; suggest recalibrating.
         var maxRotation = Double.pi / 3
@@ -110,16 +112,17 @@ struct ScanDetector {
     private(set) var level: Level = .none
     private(set) var baseline: SIMD3<Double> = .zero
     private(set) var baselineStrength = 0.0
-    /// How many iOS bias updates have been subtracted since calibration.
-    private(set) var biasCorrections = 0
+    /// How far iOS's own calibrated field has wandered from ours, µT. Diagnostic only.
+    private(set) var iosDrift = 0.0
 
     private var orientation = simd_quatd(ix: 0, iy: 0, iz: 0, r: 1)
-    private var biasShift: SIMD3<Double> = .zero
+    /// The phone's own magnetism (raw − calibrated), frozen at calibration.
+    private var hardIron: SIMD3<Double>?
     private var lastTime: TimeInterval?
-    private var lastField: SIMD3<Double>?
-    private var lastRaw: SIMD3<Double>?
     private var calibrationStart: TimeInterval?
     private var calibrationSum: SIMD3<Double> = .zero
+    private var hardIronSum: SIMD3<Double> = .zero
+    private var hardIronCount = 0
     private var calibrationStrengthSum = 0.0
     private var calibrationCount = 0
     private var window: [SIMD3<Double>] = []
@@ -138,10 +141,12 @@ struct ScanDetector {
         status = .calibrating
         level = .none
         orientation = simd_quatd(ix: 0, iy: 0, iz: 0, r: 1)
-        biasShift = .zero
-        biasCorrections = 0
+        hardIron = nil
+        iosDrift = 0
         calibrationStart = nil
         calibrationSum = .zero
+        hardIronSum = .zero
+        hardIronCount = 0
         calibrationStrengthSum = 0
         calibrationCount = 0
         window = []
@@ -154,8 +159,8 @@ struct ScanDetector {
         let dt = lastTime.map { min(max(s.time - $0, 0), 0.1) } ?? 0
         lastTime = s.time
         integrateRotation(s.rotationRate, dt: dt)
-        let corrected = correctBiasJumps(s)
-        let reference = orientation.act(corrected)
+        let field = sensorField(s)
+        let reference = orientation.act(field)
 
         // An uncalibrated compass can be off by tens of µT and is still being
         // re-estimated; nothing it says can be trusted. Hold until iOS is happy,
@@ -176,9 +181,17 @@ struct ScanDetector {
             calibrationSum += reference
             calibrationStrengthSum += simd_length(s.field)
             calibrationCount += 1
+            if let raw = s.rawField {
+                hardIronSum += raw - s.field
+                hardIronCount += 1
+            }
             if s.time - calibrationStart! >= config.calibrationDuration {
                 baseline = calibrationSum / Double(calibrationCount)
                 baselineStrength = calibrationStrengthSum / Double(calibrationCount)
+                // Only trust the raw sensor if it was there for the whole calibration.
+                if hardIronCount == calibrationCount {
+                    hardIron = hardIronSum / Double(hardIronCount)
+                }
                 status = .scanning
             }
             return reading(deviation: 0, legacy: 0, accuracy: s.accuracy)
@@ -202,21 +215,14 @@ struct ScanDetector {
         orientation = simd_normalize(orientation * step)
     }
 
-    private mutating func correctBiasJumps(_ s: ScanSample) -> SIMD3<Double> {
-        defer {
-            lastField = s.field
-            lastRaw = s.rawField
-        }
-        if let raw = s.rawField, let lastRaw, let lastField {
-            // Metal moves both readings together; a bias update moves only the
-            // calibrated one.
-            let disagreement = (s.field - lastField) - (raw - lastRaw)
-            if simd_length(disagreement) > config.biasJumpThreshold {
-                biasShift += disagreement
-                biasCorrections += 1
-            }
-        }
-        return s.field - biasShift
+    /// The external field in the device frame: raw minus the frozen offset
+    /// once calibrated, iOS's calibrated field while calibrating or when the
+    /// raw sensor is unavailable.
+    private mutating func sensorField(_ s: ScanSample) -> SIMD3<Double> {
+        guard let hardIron, let raw = s.rawField else { return s.field }
+        let field = raw - hardIron
+        iosDrift = simd_length(s.field - field)
+        return field
     }
 
     private mutating func filter(_ v: SIMD3<Double>) -> SIMD3<Double> {

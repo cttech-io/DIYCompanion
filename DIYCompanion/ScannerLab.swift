@@ -38,7 +38,7 @@ final class ScannerLabModel: ObservableObject {
     @Published private(set) var trace: [TracePoint] = []
     @Published private(set) var baselineStrength = 0.0
     @Published private(set) var accuracy = -1
-    @Published private(set) var biasCorrections = 0
+    @Published private(set) var iosDrift = 0.0
     @Published private(set) var isRecording = false
     @Published private(set) var recordedSamples = 0
     @Published private(set) var recordings: [URL] = []
@@ -148,13 +148,13 @@ final class ScannerLabModel: ObservableObject {
         guard sampleIndex % 3 == 0 else { return }   // publish at ~33 Hz
         let point = TracePoint(id: sampleIndex, deviation: result.deviation, legacy: result.legacyDeviation)
         let strength = detector.baselineStrength
-        let corrections = detector.biasCorrections
+        let drift = detector.iosDrift
         let count = max(rows.count - 1, 0)
         DispatchQueue.main.async {
             self.reading = result
             self.baselineStrength = strength
             self.accuracy = sample.accuracy
-            self.biasCorrections = corrections
+            self.iosDrift = drift
             if self.isRecording { self.recordedSamples = count }
             self.trace.append(point)
             if self.trace.count > Self.traceLength { self.trace.removeFirst(self.trace.count - Self.traceLength) }
@@ -286,8 +286,8 @@ struct ScannerLabView: View {
             Group {
                 Text(String(format: "1.0 reading %.1f µT · peak %.1f%@", model.reading.legacyDeviation,
                             model.reading.peak, model.reading.peakPassed ? " (passed)" : ""))
-                Text(String(format: "Baseline %.1f µT · compass %@ · bias fixes %d",
-                            model.baselineStrength, accuracyLabel, model.biasCorrections))
+                Text(String(format: "Baseline %.1f µT · compass %@ · iOS drift %.1f µT",
+                            model.baselineStrength, accuracyLabel, model.iosDrift))
                 if !model.reading.warnings.isEmpty {
                     Text(warningText).foregroundStyle(Color.statusOrangeText)
                 }

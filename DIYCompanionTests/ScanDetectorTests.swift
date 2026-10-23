@@ -27,8 +27,9 @@ struct SweepSimulator {
     var wobbleDegrees = 0.0         // hand roll about the screen normal
     var wobblePeriod = 2.5
     var drift = SIMD3<Double>.zero  // µT per second, device frame
-    /// A bias re-estimate by iOS: (time, step) applied to the calibrated field only.
-    var biasJump: (time: Double, step: SIMD3<Double>)?
+    /// iOS's compass calibration wandering off: from `time`, the calibrated
+    /// field (only) ramps by `step` per second, as seen near metal on a real phone.
+    var iosDrift: (time: Double, step: SIMD3<Double>)?
     /// Added to the field throughout, e.g. a MagSafe magnet (µT, device frame).
     var accessoryField = SIMD3<Double>.zero
     var hardIron = SIMD3<Double>(-120, 45, 310)
@@ -76,7 +77,7 @@ struct SweepSimulator {
             let device = attitude.inverse.act(world) + accessoryField + drift * t
             let jitter = SIMD3(rng.gaussian(), rng.gaussian(), rng.gaussian()) * noise
             var calibrated = device + jitter
-            if let jump = biasJump, t >= jump.time { calibrated += jump.step }
+            if let d = iosDrift, t >= d.time { calibrated += d.step * (t - d.time) }
             let raw = device + jitter + hardIron
             let gyroNoise = SIMD3(rng.gaussian(), rng.gaussian(), rng.gaussian()) * 0.002
             samples.append(ScanSample(
@@ -177,16 +178,16 @@ final class ScanDetectorTests: XCTestCase {
         XCTAssertFalse(readings.contains { $0.level > .none })
     }
 
-    func testBiasJump_seenOnlyByCalibratedField_isSubtracted() {
+    func testIOSCalibrationWandering_isIgnored() {
         var sim = SweepSimulator()
         sim.inducedVolume = 0
-        sim.biasJump = (time: 4, step: SIMD3(6, -4, 3))
+        sim.iosDrift = (time: 4, step: SIMD3(6, -4, 3))
         var detector = ScanDetector()
         let readings = sim.sweep().map { detector.process($0) }
         XCTAssertFalse(readings.contains { $0.level > .none })
-        XCTAssertEqual(detector.biasCorrections, 1)
+        XCTAssertGreaterThan(detector.iosDrift, 20)
 
-        // Without the raw sensor to compare against it can't be told apart from metal.
+        // Without the raw sensor it falls back to iOS's field and is fooled.
         let noRaw = sim.sweep().map { s -> ScanSample in var s = s; s.rawField = nil; return s }
         XCTAssertTrue(replay(noRaw).contains { $0.level > .none })
     }
@@ -322,6 +323,33 @@ final class ScanDetectorTests: XCTestCase {
     }
 
     // MARK: - Recordings
+
+    /// Real sweep, iPhone 17 Pro, a plain screw under a hardback book, two passes.
+    /// Truth from the raw sensor: still and rotating 0–3.3 s, passes peaking near
+    /// 4.5 s and 9.5 s, back at the start point from ~11.5 s.
+    func testRecording_plainScrewUnderBook() throws {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/plain-screw-book-iphone17pro.csv")
+        let samples = ScanRecording.samples(fromCSV: try String(contentsOf: url, encoding: .utf8))
+        XCTAssertEqual(samples.count, 1324)
+        let t0 = samples[0].time
+        let readings = replay(samples)
+        let timed = zip(samples.map { $0.time - t0 }, readings)
+        func during(_ range: ClosedRange<Double>) -> [ScanDetector.Reading] {
+            timed.filter { range.contains($0.0) }.map(\.1)
+        }
+
+        // Rotating up to ~27°/s before the sweep must not read as metal.
+        XCTAssertFalse(during(0...3.3).contains { $0.level > .none })
+        XCTAssertTrue(during(3.7...5.0).contains { $0.level > .none }, "missed the first pass")
+        XCTAssertTrue(during(9.2...10.5).contains { $0.level > .none }, "missed the second pass")
+        // iOS's calibrated field ends 41 µT out here; ours must come back clean.
+        XCTAssertTrue(during(11.8...13.5).allSatisfy { $0.level == .none && $0.deviation < 2 })
+
+        // 1.0 read under its 25 µT caution threshold on the first pass.
+        let legacyFirstPass = during(3.7...5.0).map(\.legacyDeviation).max() ?? 0
+        XCTAssertEqual(MagnetometerManager.classify(deviation: legacyFirstPass, sensitivity: 1), .safe)
+    }
 
     func testCSV_roundTripsAndIgnoresMetadata() {
         let csv = """
