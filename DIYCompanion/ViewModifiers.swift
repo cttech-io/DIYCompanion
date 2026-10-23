@@ -58,6 +58,17 @@ extension Color {
     static let statusRedText    = statusText(.systemRed,    light: 0xB22922)
     static let statusYellowText = statusText(.systemYellow, light: 0x806600)
 
+    /// Accent for *text* (labels, links, text buttons). The amber accent stays
+    /// as-is for shapes — bubble, sliders, rings, icons — which need 3:1, but
+    /// amber text on a light background is ~2:1. Light mode gets a bronze
+    /// shade of the same hue (4.7:1); dark mode keeps the accent itself,
+    /// including its Increase Contrast variant.
+    static let accentText = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? (UIColor(named: "AccentColor") ?? .systemOrange)
+            : UIColor(rgb: 0x946300)
+    })
+
     /// Label colour on a solid accent fill. The amber accent is light in both
     /// appearances, so white on it is ~2:1; black is 10.6:1.
     static let onAccent = Color.black

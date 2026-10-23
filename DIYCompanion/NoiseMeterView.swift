@@ -20,6 +20,7 @@ struct NoiseMeterView: View {
                             }
                         }
                         .buttonStyle(.borderedProminent)
+                        .foregroundStyle(Color.onAccent)
                     }
                 } else if vSize == .compact {
                     HStack(spacing: 24) {
@@ -126,7 +127,7 @@ struct NoiseMeterView: View {
             }
             Button("Reset Peak") { manager.resetPeak() }
                 .font(.caption)
-                .tint(.accentColor)
+                .tint(Color.accentText)
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(16)

@@ -121,6 +121,7 @@ struct RulerCalibrationView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .tint(Color.accentText)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
@@ -129,6 +130,7 @@ struct RulerCalibrationView: View {
                         dismiss()
                     }
                     .bold()
+                    .tint(Color.accentText)
                 }
                 ToolbarItem(placement: .bottomBar) {
                     Button("Reset to Default", role: .destructive) {

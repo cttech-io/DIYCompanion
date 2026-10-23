@@ -510,7 +510,7 @@ struct RulerView: View {
             .dynamicTypeSize(...DynamicTypeSize.xxLarge)
             .padding(.horizontal, 6).padding(.vertical, 3)
             .background(color, in: Capsule())
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.onAccent)
             .position(point)
             .allowsHitTesting(false)
     }
@@ -540,7 +540,7 @@ struct RulerView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     Text(span)
                         .font(.system(.callout, design: .rounded)).bold().monospacedDigit()
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color.accentText)
                 }
             }
             Divider()
@@ -573,7 +573,7 @@ struct RulerView: View {
             )
             .font(.caption).bold()
         }
-        .tint(didCopy ? Color.statusGreenText : .accentColor)
+        .tint(didCopy ? Color.statusGreenText : .accentText)
         .animation(.easeInOut, value: didCopy)
     }
 

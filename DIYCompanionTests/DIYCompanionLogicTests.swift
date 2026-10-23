@@ -253,5 +253,13 @@ final class DIYCompanionLogicTests: XCTestCase {
             let ratio = (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
             XCTAssertGreaterThanOrEqual(ratio, 4.5, "\(tint) chip text is \(ratio):1")
         }
+
+        // Accent text on both light-mode page backgrounds it appears on.
+        let accent = UIColor(Color.accentText).resolvedColor(with: light)
+        for bg in [UIColor.secondarySystemBackground, .tertiarySystemBackground, .systemBackground] {
+            let (l1, l2) = (luminance(accent), luminance(bg.resolvedColor(with: light)))
+            let ratio = (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+            XCTAssertGreaterThanOrEqual(ratio, 4.5, "accent text on \(bg) is \(ratio):1")
+        }
     }
 }

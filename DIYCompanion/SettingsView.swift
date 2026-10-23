@@ -67,6 +67,7 @@ struct SettingsView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                         .fontWeight(.semibold)
+                        .tint(Color.accentText)
                 }
             }
         }
@@ -183,10 +184,10 @@ struct SettingsView: View {
                 Spacer()
                 Text(value)
                     .font(.subheadline)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color.accentText)
                 Image(systemName: "arrow.up.right")
                     .font(.caption)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color.accentText)
                     .accessibilityHidden(true)
             }
         }
