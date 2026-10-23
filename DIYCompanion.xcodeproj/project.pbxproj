@@ -394,6 +394,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "DIY Companion";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "DIY Companion switches on the rear camera's LED flash for the Torch tool. The camera is not used to take photos or video.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The Noise Meter uses the microphone to measure ambient sound levels in decibels. Audio is processed live on your device to show the reading and is never recorded, stored, or shared.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -430,6 +431,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "DIY Companion";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "DIY Companion switches on the rear camera's LED flash for the Torch tool. The camera is not used to take photos or video.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The Noise Meter uses the microphone to measure ambient sound levels in decibels. Audio is processed live on your device to show the reading and is never recorded, stored, or shared.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
